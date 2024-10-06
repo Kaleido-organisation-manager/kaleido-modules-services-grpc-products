@@ -9,6 +9,8 @@ using Kaleido.Modules.Services.Grpc.Products.Services;
 using Kaleido.Modules.Services.Grpc.Products.Validators.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Validators;
 using Microsoft.EntityFrameworkCore;
+using Kaleido.Modules.Services.Grpc.Products.Mappers.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Mappers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,9 +22,13 @@ builder.Services.AddScoped<IGetProductHandler, GetProductHandler>();
 builder.Services.AddScoped<IGetAllProductsHandler, GetAllProductsHandler>();
 builder.Services.AddScoped<IGetAllProductsByCategoryIdHandler, GetAllProductsByCategoryIdHandler>();
 builder.Services.AddScoped<ICreateProductHandler, CreateProductHandler>();
+builder.Services.AddScoped<IUpdateProductHandler, UpdateProductHandler>();
 
 // Add Managers
 builder.Services.AddScoped<IProductsManager, ProductsManager>();
+
+// Add Mappers
+builder.Services.AddScoped<IProductMapper, ProductMapper>();
 
 // Add Repositories
 builder.Services.AddScoped<IProductsRepository, ProductsRepository>();
