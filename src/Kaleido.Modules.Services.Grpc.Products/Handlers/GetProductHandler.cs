@@ -17,14 +17,23 @@ public class GetProductHandler : IGetProductHandler
         _productsManager = productsManager;
     }
 
-    public async Task<GetProductResponse> HandleAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<GetProductResponse> HandleAsync(string key, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Handling GetProduct request for Id: {Id}", id);
-        var product = await _productsManager.GetProductAsync(id, cancellationToken);
+        _logger.LogInformation("Handling GetProduct request for key: {Key}", key);
+        Product? product;
+        try
+        {
+            product = await _productsManager.GetProductAsync(key, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving product with key: {Key}", key);
+            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
+        }
         if (product == null)
         {
-            _logger.LogWarning("Product with Id: {Id} not found", id);
-            throw new RpcException(new Status(StatusCode.NotFound, $"Product with Id: {id} not found"));
+            _logger.LogWarning("Product with key: {Key} not found", key);
+            throw new RpcException(new Status(StatusCode.NotFound, $"Product with key: {key} not found"));
         }
         return new GetProductResponse
         {

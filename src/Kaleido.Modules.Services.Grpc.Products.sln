@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products", "Kaleido.Modules.Services.Grpc.Products\Kaleido.Modules.Services.Grpc.Products.csproj", "{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Tests", "Kaleido.Modules.Services.Grpc.Products.Tests\Kaleido.Modules.Services.Grpc.Products.Tests.csproj", "{17229366-4EA0-4532-8AC7-3F285667D91E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17229366-4EA0-4532-8AC7-3F285667D91E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17229366-4EA0-4532-8AC7-3F285667D91E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17229366-4EA0-4532-8AC7-3F285667D91E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17229366-4EA0-4532-8AC7-3F285667D91E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

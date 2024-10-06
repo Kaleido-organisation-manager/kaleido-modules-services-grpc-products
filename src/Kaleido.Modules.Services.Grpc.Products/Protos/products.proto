@@ -60,7 +60,7 @@ message DeleteProductResponse {
 message CreateProduct {
     string name = 1;
     string description = 2;
-    float price = 3;
+    repeated ProductPrice prices = 3;
     string categoryKey = 4;
     string imageUrl = 5;
 }

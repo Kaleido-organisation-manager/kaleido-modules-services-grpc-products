@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Kaleido.Modules.Services.Grpc.Products.Handlers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Managers.Interfaces;
 
@@ -19,11 +20,19 @@ public class GetAllProductsHandler : IGetAllProductsHandler
 
     public async Task<GetAllProductsResponse> HandleAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Handling GetAllProducts request");
-        var products = await _productsManager.GetAllProductsAsync(cancellationToken);
-        return new GetAllProductsResponse
+        try
         {
-            Products = { products }
-        };
+            _logger.LogInformation("Handling GetAllProducts request");
+            var products = await _productsManager.GetAllProductsAsync(cancellationToken);
+            return new GetAllProductsResponse
+            {
+                Products = { products }
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving products");
+            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
+        }
     }
 }

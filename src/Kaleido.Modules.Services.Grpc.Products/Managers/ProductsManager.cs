@@ -88,11 +88,21 @@ public class ProductsManager : IProductsManager
 
     public async Task<Product> CreateProductAsync(CreateProduct createProduct, CancellationToken cancellationToken = default)
     {
+
+        var priceList = createProduct.Prices.Select(price => new ProductPrice
+        {
+            CurrencyKey = price.CurrencyKey,
+            Value = price.Value
+        }).ToList();
+
         var product = new Product()
         {
             CategoryKey = createProduct.CategoryKey,
             Description = createProduct.Description,
             Key = Guid.NewGuid().ToString(),
+            Name = createProduct.Name,
+            ImageUrl = createProduct.ImageUrl,
+            Prices = { priceList }
         };
 
         await _categoryValidator.ValidateIdAsync(product.CategoryKey);
@@ -105,9 +115,9 @@ public class ProductsManager : IProductsManager
         var productPriceEntities = product.Prices.Select(price => _productMapper.ToCreatePriceEntity(createdProductEntity.Key!, price)).ToList();
         await _productPricesRepository.CreateRangeAsync(productPriceEntities, cancellationToken);
 
-        // await _productsRepository.CreateAsync(product, cancellationToken);
         _logger.LogInformation("Product with key: {key} saved", product.Key);
-        return product;
+        var storedProduct = _productMapper.FromEntities(createdProductEntity, productPriceEntities);
+        return storedProduct;
     }
 
     public async Task<Product> UpdateProductAsync(Product product, CancellationToken cancellationToken = default)
@@ -126,6 +136,6 @@ public class ProductsManager : IProductsManager
         var productPriceEntities = product.Prices.Select(price => _productMapper.ToCreatePriceEntity(updatedProductEntity.Key!, price)).ToList();
         await _productPricesRepository.CreateRangeAsync(productPriceEntities, cancellationToken);
 
-        return product;
+        return _productMapper.FromEntities(updatedProductEntity, productPriceEntities);
     }
 }
