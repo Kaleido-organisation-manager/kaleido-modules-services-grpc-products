@@ -3,3 +3,4 @@ obj/
 *.Development.json
 *.Staging.json
 .vscode
+out/
