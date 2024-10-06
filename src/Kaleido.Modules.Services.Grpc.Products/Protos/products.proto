@@ -7,7 +7,8 @@ package products;
 
 service Products {
   rpc GetProduct(GetProductRequest) returns (GetProductResponse) {}
-  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse) {}
+  rpc GetAllProducts(GetAllProductsRequest) returns (GetAllProductsResponse) {}
+  rpc GetAllProductsByCategoryId(GetAllProductsByCategoryIdRequest) returns (GetAllProductsResponse) {}
   rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {}
   rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse) {}
   rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse) {}
@@ -21,17 +22,18 @@ message GetProductResponse {
   Product product = 1;
 }
 
-message GetProductsRequest {
-  int32 page = 1;
-  int32 limit = 2;
+message GetAllProductsByCategoryIdRequest {
+  string categoryId = 1;
 }
 
-message GetProductsResponse {
+message GetAllProductsRequest {}
+
+message GetAllProductsResponse {
   repeated Product products = 1;
 }
 
 message CreateProductRequest {
-  Product product = 1;
+  CreateProduct product = 1;
 }
 
 message CreateProductResponse {
@@ -55,9 +57,24 @@ message DeleteProductResponse {
   string id = 1;
 }
 
+message CreateProduct {
+    string name = 1;
+    string description = 2;
+    float price = 3;
+    string categoryKey = 4;
+    string imageUrl = 5;
+}
+
 message Product {
-  string id = 1;
+  string key = 1;
   string name = 2;
   string description = 3;
-  float price = 4;
+  repeated ProductPrice prices = 4;
+  string categoryKey = 5;
+  string imageUrl = 6;
+}
+
+message ProductPrice {
+  string currencyKey = 1;
+  float value = 2;
 }
