@@ -1,5 +1,7 @@
+using Kaleido.Modules.Services.Grpc.Products.Constants;
 using Kaleido.Modules.Services.Grpc.Products.Managers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Mappers.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Models;
 using Kaleido.Modules.Services.Grpc.Products.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Validators.Interfaces;
 
@@ -127,15 +129,55 @@ public class ProductsManager : IProductsManager
         await _productPriceValidator.ValidateAsync(product.Prices);
 
         _logger.LogInformation("Updating Product with key: {key}", product.Key);
-        var storedProduct = await _productsRepository.GetActiveAsync(product.Key!, cancellationToken);
+        var storedProduct = await _productsRepository.GetAsync(product.Key!, cancellationToken);
         var newRevision = storedProduct?.Revision + 1 ?? 1;
         var productEntity = _productMapper.ToCreateEntity(product, newRevision);
-
         var updatedProductEntity = await _productsRepository.UpdateAsync(productEntity, cancellationToken);
 
-        var productPriceEntities = product.Prices.Select(price => _productMapper.ToCreatePriceEntity(updatedProductEntity.Key!, price)).ToList();
-        await _productPricesRepository.CreateRangeAsync(productPriceEntities, cancellationToken);
+        var storedProductPrices = await _productPricesRepository.GetAllByProductIdAsync(product.Key!, cancellationToken);
+
+        var productPriceEntities = new List<ProductPriceEntity>();
+
+        foreach (var storedProductPrice in storedProductPrices)
+        {
+            var incomingProductPrice = product.Prices.FirstOrDefault(price => price.CurrencyKey == storedProductPrice.CurrencyKey);
+            if (incomingProductPrice == null)
+            {
+                await _productPricesRepository.UpdateStatusAsync(storedProductPrice.Key!, EntityStatus.Deleted, cancellationToken);
+            }
+            else if (incomingProductPrice.Value != storedProductPrice.Price)
+            {
+                var productPrice = _productMapper.ToCreatePriceEntity(updatedProductEntity.Key!, incomingProductPrice, storedProductPrice.Revision + 1);
+                var updatedProductPrice = await _productPricesRepository.UpdateAsync(storedProductPrice, cancellationToken);
+                if (updatedProductPrice == null)
+                {
+                    throw new InvalidOperationException("Product price update failed");
+                }
+                productPriceEntities.Add(updatedProductPrice);
+            }
+            else
+            {
+                productPriceEntities.Add(storedProductPrice);
+            }
+        }
+
+        // check for any new product price entities
+        var newProductPrices = product.Prices.Where(price => storedProductPrices.All(storedPrice => storedPrice.CurrencyKey != price.CurrencyKey));
+        foreach (var newProductPrice in newProductPrices)
+        {
+            var productPrice = _productMapper.ToCreatePriceEntity(updatedProductEntity.Key!, newProductPrice);
+            var createdProductPrice = await _productPricesRepository.CreateAsync(productPrice, cancellationToken);
+            productPriceEntities.Add(createdProductPrice);
+        }
 
         return _productMapper.FromEntities(updatedProductEntity, productPriceEntities);
+    }
+
+    public async Task DeleteProductAsync(string key, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Deleting Product with key: {key}", key);
+        await _productsRepository.DeleteAsync(key, cancellationToken);
+        await _productPricesRepository.DeleteByProductIdAsync(key, cancellationToken);
+        _logger.LogInformation("Product with key: {key} deleted", key);
     }
 }

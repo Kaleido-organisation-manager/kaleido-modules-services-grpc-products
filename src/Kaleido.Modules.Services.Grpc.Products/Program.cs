@@ -18,10 +18,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddGrpc();
 
 // Add Handlers
-builder.Services.AddScoped<IGetProductHandler, GetProductHandler>();
-builder.Services.AddScoped<IGetAllProductsHandler, GetAllProductsHandler>();
-builder.Services.AddScoped<IGetAllProductsByCategoryIdHandler, GetAllProductsByCategoryIdHandler>();
 builder.Services.AddScoped<ICreateProductHandler, CreateProductHandler>();
+builder.Services.AddScoped<IDeleteProductHandler, DeleteProductHandler>();
+builder.Services.AddScoped<IGetAllProductsByCategoryIdHandler, GetAllProductsByCategoryIdHandler>();
+builder.Services.AddScoped<IGetAllProductsHandler, GetAllProductsHandler>();
+builder.Services.AddScoped<IGetProductHandler, GetProductHandler>();
 builder.Services.AddScoped<IUpdateProductHandler, UpdateProductHandler>();
 
 // Add Managers

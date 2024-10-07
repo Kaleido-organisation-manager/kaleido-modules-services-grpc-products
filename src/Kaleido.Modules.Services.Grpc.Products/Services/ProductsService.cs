@@ -6,6 +6,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Services;
 public class ProductsService : Products.ProductsBase
 {
     private readonly ICreateProductHandler _createProductHandler;
+    private readonly IDeleteProductHandler _deleteProductHandler;
     private readonly IGetAllProductsByCategoryIdHandler _getAllProductsByCategoryIdHandler;
     private readonly IGetAllProductsHandler _getAllProductsHandler;
     private readonly IGetProductHandler _getProductHandler;
@@ -14,6 +15,7 @@ public class ProductsService : Products.ProductsBase
 
     public ProductsService(
             ICreateProductHandler createProductHandler,
+            IDeleteProductHandler deleteProductHandler,
             IGetAllProductsByCategoryIdHandler getAllProductsByCategoryIdHandler,
             IGetAllProductsHandler getAllProductsHandler,
             IGetProductHandler getProductHandler,
@@ -22,6 +24,7 @@ public class ProductsService : Products.ProductsBase
         )
     {
         _createProductHandler = createProductHandler;
+        _deleteProductHandler = deleteProductHandler;
         _getAllProductsByCategoryIdHandler = getAllProductsByCategoryIdHandler;
         _getAllProductsHandler = getAllProductsHandler;
         _getProductHandler = getProductHandler;
@@ -57,6 +60,12 @@ public class ProductsService : Products.ProductsBase
     {
         _logger.LogInformation("gRPC request received for UpdateProduct with key: {Id}", request.Product.Name);
         return await _updateProductHandler.HandleAsync(request.Product, context.CancellationToken);
+    }
+
+    public override async Task<DeleteProductResponse> DeleteProduct(DeleteProductRequest request, ServerCallContext context)
+    {
+        _logger.LogInformation("gRPC request received for DeleteProduct with key: {Id}", request.Id);
+        return await _deleteProductHandler.HandleAsync(request.Id, context.CancellationToken);
     }
 
 }

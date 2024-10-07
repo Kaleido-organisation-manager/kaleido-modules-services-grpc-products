@@ -4,7 +4,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Models;
 
 public abstract class BaseEntity
 {
-    public string? Id { get; set; }
+    public Guid Id { get; set; }
     public string? Key { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public int Revision { get; set; }

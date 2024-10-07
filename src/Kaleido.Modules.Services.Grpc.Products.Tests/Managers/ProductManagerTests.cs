@@ -207,7 +207,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
             _mocker.GetMock<IProductPriceValidator>()
                 .Setup(v => v.ValidateAsync(product.Prices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _mocker.GetMock<IProductsRepository>()
-                .Setup(repo => repo.GetActiveAsync(product.Key, It.IsAny<CancellationToken>()))
+                .Setup(repo => repo.GetAsync(product.Key, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(storedProductEntity);
             _mocker.GetMock<IProductMapper>()
                 .Setup(mapper => mapper.ToCreateEntity(product, 2)).Returns(updatedProductEntity);
