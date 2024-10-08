@@ -1,16 +1,24 @@
-using Kaleido.Modules.Services.Grpc.Products.Configuration;
-using Kaleido.Modules.Services.Grpc.Products.Handlers.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Handlers;
-using Kaleido.Modules.Services.Grpc.Products.Managers.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Managers;
-using Kaleido.Modules.Services.Grpc.Products.Repositories.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Repositories;
-using Kaleido.Modules.Services.Grpc.Products.Services;
-using Kaleido.Modules.Services.Grpc.Products.Validators.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Validators;
+using Kaleido.Modules.Services.Grpc.Products.Common.Configuration;
+using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
+using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Common.Mappers;
+using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Common.Repositories;
+using Kaleido.Modules.Services.Grpc.Products.Common.Services;
+using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 using Microsoft.EntityFrameworkCore;
-using Kaleido.Modules.Services.Grpc.Products.Mappers.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Mappers;
+using Kaleido.Modules.Services.Grpc.Products;
+using Kaleido.Modules.Services.Grpc.Products.GetProductRevision;
+using Kaleido.Modules.Services.Grpc.Products.Create;
+using Kaleido.Modules.Services.Grpc.Products.Update;
+using Kaleido.Modules.Services.Grpc.Products.Delete;
+using Kaleido.Modules.Services.Grpc.Products.Get;
+using Kaleido.Modules.Services.Grpc.Products.GetAll;
+using Kaleido.Modules.Services.Grpc.Products.GetAllByCategoryKey;
+using Kaleido.Modules.Services.Grpc.Products.GetProductRevisions;
+using Kaleido.Modules.Services.Grpc.Products.GetProductPriceRevision;
+using Kaleido.Modules.Services.Grpc.Products.GetProductPriceRevisions;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,17 +27,28 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddGrpc();
 
 // Add Handlers
-builder.Services.AddScoped<ICreateProductHandler, CreateProductHandler>();
-builder.Services.AddScoped<IDeleteProductHandler, DeleteProductHandler>();
-builder.Services.AddScoped<IGetAllProductsByCategoryIdHandler, GetAllProductsByCategoryIdHandler>();
-builder.Services.AddScoped<IGetAllProductsHandler, GetAllProductsHandler>();
-builder.Services.AddScoped<IGetProductHandler, GetProductHandler>();
-builder.Services.AddScoped<IGetProductRevisionHandler, GetProductRevisionHandler>();
-builder.Services.AddScoped<IGetProductRevisionsHandler, GetProductRevisionsHandler>();
-builder.Services.AddScoped<IUpdateProductHandler, UpdateProductHandler>();
+builder.Services.AddScoped<IBaseHandler<GetProductRevisionRequest, GetProductRevisionResponse>, GetProductRevisionHandler>();
+builder.Services.AddScoped<IBaseHandler<CreateProductRequest, CreateProductResponse>, CreateProductHandler>();
+builder.Services.AddScoped<IBaseHandler<UpdateProductRequest, UpdateProductResponse>, UpdateProductHandler>();
+builder.Services.AddScoped<IBaseHandler<DeleteProductRequest, DeleteProductResponse>, DeleteProductHandler>();
+builder.Services.AddScoped<IBaseHandler<GetProductRequest, GetProductResponse>, GetProductHandler>();
+builder.Services.AddScoped<IBaseHandler<GetAllProductsRequest, GetAllProductsResponse>, GetAllProductHandler>();
+builder.Services.AddScoped<IBaseHandler<GetAllProductsByCategoryIdRequest, GetAllProductsResponse>, GetAllByCategoryKeyHandler>();
+builder.Services.AddScoped<IBaseHandler<GetProductRequest, GetProductRevisionsResponse>, GetProductRevisionsHandler>();
+builder.Services.AddScoped<IBaseHandler<GetProductPriceRevisionRequest, GetProductPriceRevisionResponse>, GetProductPriceRevisionHandler>();
+builder.Services.AddScoped<IBaseHandler<GetProductPriceRevisionsRequest, GetProductPriceRevisionsResponse>, GetProductPriceRevisionsHandler>();
 
 // Add Managers
-builder.Services.AddScoped<IProductsManager, ProductsManager>();
+builder.Services.AddScoped<IGetProductManager, GetProductManager>();
+builder.Services.AddScoped<ICreateProductManager, CreateProductManager>();
+builder.Services.AddScoped<IUpdateProductManager, UpdateProductManager>();
+builder.Services.AddScoped<IDeleteProductManager, DeleteProductManager>();
+builder.Services.AddScoped<IGetAllProductManager, GetAllProductManager>();
+builder.Services.AddScoped<IGetAllByCategoryKeyManager, GetAllByCategoryKeyManager>();
+builder.Services.AddScoped<IGetProductRevisionManager, GetProductRevisionManager>();
+builder.Services.AddScoped<IGetProductRevisionsManager, GetProductRevisionsManager>();
+builder.Services.AddScoped<IGetProductPriceRevisionManager, GetProductPriceRevisionManager>();
+builder.Services.AddScoped<IGetProductPriceRevisionsManager, GetProductPriceRevisionsManager>();
 
 // Add Mappers
 builder.Services.AddScoped<IProductMapper, ProductMapper>();
