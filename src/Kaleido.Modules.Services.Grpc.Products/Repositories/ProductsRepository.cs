@@ -13,25 +13,13 @@ public class ProductsRepository : BaseRepository<ProductEntity, ProductsDbContex
     {
     }
 
-    public async Task<IEnumerable<ProductEntity>> GetAllByCategoryIdAsync(string categoryId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProductEntity>> GetAllByCategoryIdAsync(Guid categoryKey, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("GetAllProductsByCategoryId called with CategoryId: {CategoryId}", categoryId);
+        _logger.LogInformation("GetAllProductsByCategoryId called with CategoryId: {CategoryId}", categoryKey);
         return await _dbContext.Products
-            .Where(p => p.CategoryKey == categoryId)
+            .Where(p => p.CategoryKey == categoryKey)
             .Where(p => p.Status == EntityStatus.Active)
             .ToListAsync(cancellationToken);
-    }
-
-    public async Task<ProductEntity?> GetActiveAsync(string key, CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation("Getting active product with key: {Key}", key);
-        var product = await _dbContext.Products.Where(p => p.Key == key && p.Status == EntityStatus.Active).FirstOrDefaultAsync(cancellationToken);
-        if (product == null)
-        {
-            _logger.LogWarning("Product with key: {Id} not found", key);
-            return null;
-        }
-        return product;
     }
 
 }

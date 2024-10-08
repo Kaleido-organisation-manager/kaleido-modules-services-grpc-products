@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option csharp_namespace = "Kaleido.Modules.Services.Grpc.Products";
+option csharp_namespace = "Kaleido.Modules.Services.Grpc.Products.Client";
 
 package products;
 
@@ -13,9 +13,6 @@ service Products {
   rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse) {}
   rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse) {}
   rpc GetProductRevisions(GetProductRequest) returns (GetProductRevisionsResponse) {}
-  rpc GetProductRevision(GetProductRevisionRequest) returns (GetProductRevisionResponse) {}
-  rpc GetProductPriceRevisions(GetProductPriceRevisionsRequest) returns (GetProductPriceRevisionsResponse) {}
-  rpc GetProductPriceRevision(GetProductPriceRevisionRequest) returns (GetProductPriceRevisionResponse) {}
 }
 
 message GetProductRequest {
@@ -96,40 +93,4 @@ message ProductRevision {
   int32 revision = 7;
   string status = 8;
   string createdAt = 9;
-}
-
-message GetProductRevisionRequest {
-  string key = 1;
-  int32 revision = 2;
-}
-
-message GetProductRevisionResponse {
-  ProductRevision revision = 1;
-}
-
-message GetProductPriceRevisionsRequest {
-  string key = 1;
-  string currencyKey = 2;
-}
-
-message GetProductPriceRevisionsResponse {
-  repeated ProductPriceRevision revisions = 1;
-}
-
-message GetProductPriceRevisionRequest {
-  string key = 1;
-  int32 revision = 2;
-  string currencyKey = 3;
-}
-
-message GetProductPriceRevisionResponse {
-  ProductPriceRevision revision = 1;
-}
-
-message ProductPriceRevision {
-  string currencyKey = 1;
-  float value = 2;
-  int32 revision = 3;
-  string status = 4;
-  string createdAt = 5;
 }

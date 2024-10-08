@@ -26,8 +26,8 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
         public async Task GetProductAsync_ShouldReturnProduct_WhenExists()
         {
             // Arrange
-            var productKey = "product-key";
-            var productEntity = new ProductEntity() { Key = productKey, Name = "Test Product", CategoryKey = "Key" }; // Initialize as necessary
+            var productKey = Guid.NewGuid();
+            var productEntity = new ProductEntity() { Key = productKey, Name = "Test Product", CategoryKey = Guid.NewGuid() }; // Initialize as necessary
             var productPrices = new List<ProductPriceEntity>(); // Initialize as necessary
             var expectedProduct = new Product(); // Initialize with expected properties
 
@@ -42,7 +42,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
                 .Returns(expectedProduct);
 
             // Act
-            var result = await _productsManager.GetProductAsync(productKey);
+            var result = await _productsManager.GetProductAsync(productKey.ToString());
 
             // Assert
             Assert.IsNotNull(result);
@@ -55,7 +55,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
             // Arrange
             var productKey = "non-existing-product-key";
             _mocker.GetMock<IProductsRepository>()
-                .Setup(repo => repo.GetAsync(productKey, It.IsAny<CancellationToken>()))
+                .Setup(repo => repo.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ProductEntity?)null);
 
             // Act
@@ -71,8 +71,8 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
             // Arrange
             var productEntities = new List<ProductEntity>
             {
-                new ProductEntity { Key = "product1-key", CategoryKey = "category-key", Name = "Product 1" },
-                new ProductEntity { Key = "product2-key", CategoryKey = "category-key", Name = "Product 2" }
+                new ProductEntity { Key = Guid.NewGuid(), CategoryKey = Guid.NewGuid(), Name = "Product 1" },
+                new ProductEntity { Key = Guid.NewGuid(), CategoryKey = Guid.NewGuid(), Name = "Product 2" }
             };
             var productPrices = new List<ProductPriceEntity>(); // Initialize as necessary
             var expectedProducts = new List<Product> { new Product(), new Product() }; // Initialize with expected properties
@@ -81,7 +81,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
                 .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(productEntities);
             _mocker.GetMock<IProductPricesRepository>()
-                .Setup(repo => repo.GetAllByProductIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(repo => repo.GetAllByProductIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(productPrices);
             _mocker.GetMock<IProductMapper>()
                 .Setup(mapper => mapper.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()))
@@ -99,11 +99,11 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
         public async Task GetAllProductsByCategoryIdAsync_ShouldReturnProducts_WhenValidCategoryKey()
         {
             // Arrange
-            var categoryKey = "valid-category-key";
+            var categoryKey = Guid.NewGuid();
             var productEntities = new List<ProductEntity>
             {
-                new ProductEntity { Key = "product1-key", CategoryKey = categoryKey, Name = "Product 1" },
-                new ProductEntity { Key = "product2-key", CategoryKey = categoryKey, Name = "Product 2" }
+                new ProductEntity { Key = Guid.NewGuid(), CategoryKey = categoryKey, Name = "Product 1" },
+                new ProductEntity { Key = Guid.NewGuid(), CategoryKey = categoryKey, Name = "Product 2" }
             };
             var productPrices = new List<ProductPriceEntity>(); // Initialize as necessary
             var expectedProducts = new List<Product> { new Product(), new Product() }; // Initialize with expected properties
@@ -114,7 +114,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
                 .Setup(repo => repo.GetAllByCategoryIdAsync(categoryKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(productEntities);
             _mocker.GetMock<IProductPricesRepository>()
-                .Setup(repo => repo.GetAllByProductIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(repo => repo.GetAllByProductIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(productPrices);
             _mocker.GetMock<IProductMapper>()
                 .Setup(mapper => mapper.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()))
@@ -133,7 +133,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
         public async Task GetAllProductsByCategoryIdAsync_ShouldThrowValidationException_WhenCategoryIsInvalid()
         {
             // Arrange
-            var categoryKey = "invalid-category-key";
+            var categoryKey = Guid.NewGuid();
             _mocker.GetMock<ICategoryValidator>()
                 .Setup(v => v.ValidateIdAsync(categoryKey, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new ValidationException("Invalid category"));
@@ -146,12 +146,13 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
         public async Task CreateProductAsync_ShouldCreateProduct_WhenValid()
         {
             // Arrange
-            var createProduct = new CreateProduct { CategoryKey = "category-key", Description = "Test product" };
-            var product = new Product { CategoryKey = createProduct.CategoryKey, Description = createProduct.Description, Key = "new-product-key", Prices = { new List<ProductPrice>() } }; // Initialize as necessary
-            var createdProductEntity = new ProductEntity() { Key = product.Key, CategoryKey = createProduct.CategoryKey, Name = createProduct.Name }; // Initialize as necessary
+            var productKey = Guid.NewGuid().ToString();
+            var createProduct = new CreateProduct { CategoryKey = productKey, Description = "Test product" };
+            var product = new Product { CategoryKey = createProduct.CategoryKey, Description = createProduct.Description, Key = productKey, Prices = { new List<ProductPrice>() } }; // Initialize as necessary
+            var createdProductEntity = new ProductEntity() { Key = Guid.Parse(product.Key), CategoryKey = Guid.Parse(createProduct.CategoryKey), Name = createProduct.Name }; // Initialize as necessary
 
             _mocker.GetMock<ICategoryValidator>()
-                .Setup(v => v.ValidateIdAsync(createProduct.CategoryKey, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+                .Setup(v => v.ValidateIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _mocker.GetMock<IProductValidator>()
                 .Setup(v => v.ValidateCreateAsync(product, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _mocker.GetMock<IProductPriceValidator>()
@@ -185,7 +186,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
             // Arrange
             var createProduct = new CreateProduct { CategoryKey = "invalid-category", Description = "Test product" };
             _mocker.GetMock<ICategoryValidator>()
-                .Setup(v => v.ValidateIdAsync(createProduct.CategoryKey, It.IsAny<CancellationToken>()))
+                .Setup(v => v.ValidateIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new ValidationException("Invalid category"));
 
             // Act
@@ -196,18 +197,23 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Managers
         public async Task UpdateProductAsync_ShouldUpdateProduct_WhenValid()
         {
             // Arrange
-            var product = new Product { Key = "existing-product-key", CategoryKey = "category-key", Name = "Test Product" };
-            var storedProductEntity = new ProductEntity { Key = product.Key!, Revision = 1, CategoryKey = product.CategoryKey, Name = product.Name };
-            var updatedProductEntity = new ProductEntity { Key = product.Key!, Revision = 2, CategoryKey = product.CategoryKey, Name = product.Name };
+            var productKey = Guid.NewGuid();
+            var productKeyString = productKey.ToString();
+
+            var categoryKey = Guid.NewGuid();
+            var categoryKeyString = categoryKey.ToString();
+            var product = new Product { Key = productKeyString, CategoryKey = categoryKeyString, Name = "Test Product" };
+            var storedProductEntity = new ProductEntity { Key = productKey, Revision = 1, CategoryKey = categoryKey, Name = product.Name };
+            var updatedProductEntity = new ProductEntity { Key = productKey, Revision = 2, CategoryKey = categoryKey, Name = product.Name };
 
             _mocker.GetMock<IProductValidator>()
                 .Setup(v => v.ValidateUpdateAsync(product, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _mocker.GetMock<ICategoryValidator>()
-                .Setup(v => v.ValidateIdAsync(product.CategoryKey, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+                .Setup(v => v.ValidateIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _mocker.GetMock<IProductPriceValidator>()
                 .Setup(v => v.ValidateAsync(product.Prices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _mocker.GetMock<IProductsRepository>()
-                .Setup(repo => repo.GetAsync(product.Key, It.IsAny<CancellationToken>()))
+                .Setup(repo => repo.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(storedProductEntity);
             _mocker.GetMock<IProductMapper>()
                 .Setup(mapper => mapper.ToCreateEntity(product, 2)).Returns(updatedProductEntity);

@@ -39,7 +39,8 @@ public class ProductsManager : IProductsManager
     public async Task<Product?> GetProductAsync(string key, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GetProduct called with key: {Key}", key);
-        var productEntity = await _productsRepository.GetAsync(key, cancellationToken);
+        var productKey = Guid.Parse(key);
+        var productEntity = await _productsRepository.GetAsync(productKey, cancellationToken);
         if (productEntity == null)
         {
             _logger.LogWarning("Product with key: {Key} not found", key);
@@ -48,8 +49,6 @@ public class ProductsManager : IProductsManager
         var productPrices = await _productPricesRepository.GetAllByProductIdAsync(productEntity.Key!, cancellationToken);
 
         return _productMapper.FromEntities(productEntity, productPrices);
-
-        // return await _productsRepository.GetAsync(id, cancellationToken);
     }
 
     public async Task<IEnumerable<Product>> GetAllProductsAsync(CancellationToken cancellationToken = default)
@@ -68,7 +67,7 @@ public class ProductsManager : IProductsManager
         return productList;
     }
 
-    public async Task<IEnumerable<Product>> GetAllProductsByCategoryIdAsync(string categoryKey, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Product>> GetAllProductsByCategoryIdAsync(Guid categoryKey, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GetAllProductsByCategoryId called with CategoryKey: {CategoryId}", categoryKey);
         _logger.LogInformation("Validating CategoryKey: {CategoryKey}", categoryKey);
@@ -90,7 +89,6 @@ public class ProductsManager : IProductsManager
 
     public async Task<Product> CreateProductAsync(CreateProduct createProduct, CancellationToken cancellationToken = default)
     {
-
         var priceList = createProduct.Prices.Select(price => new ProductPrice
         {
             CurrencyKey = price.CurrencyKey,
@@ -107,7 +105,7 @@ public class ProductsManager : IProductsManager
             Prices = { priceList }
         };
 
-        await _categoryValidator.ValidateIdAsync(product.CategoryKey);
+        await _categoryValidator.ValidateIdAsync(Guid.Parse(product.CategoryKey));
         await _productValidator.ValidateCreateAsync(product);
         await _productPriceValidator.ValidateAsync(product.Prices);
         _logger.LogInformation("Saving Product with key: {Key}", product.Key);
@@ -125,34 +123,36 @@ public class ProductsManager : IProductsManager
     public async Task<Product> UpdateProductAsync(Product product, CancellationToken cancellationToken = default)
     {
         await _productValidator.ValidateUpdateAsync(product);
-        await _categoryValidator.ValidateIdAsync(product.CategoryKey);
+        await _categoryValidator.ValidateIdAsync(Guid.Parse(product.CategoryKey));
         await _productPriceValidator.ValidateAsync(product.Prices);
 
         _logger.LogInformation("Updating Product with key: {key}", product.Key);
-        var storedProduct = await _productsRepository.GetAsync(product.Key!, cancellationToken);
-        var newRevision = storedProduct?.Revision + 1 ?? 1;
+        var productKey = Guid.Parse(product.Key);
+        var storedProduct = await _productsRepository.GetAsync(productKey, cancellationToken);
+        var newRevision = storedProduct.Revision + 1;
         var productEntity = _productMapper.ToCreateEntity(product, newRevision);
-        var updatedProductEntity = await _productsRepository.UpdateAsync(productEntity, cancellationToken);
 
-        var storedProductPrices = await _productPricesRepository.GetAllByProductIdAsync(product.Key!, cancellationToken);
+        ProductEntity updatedProductEntity = storedProduct;
+        if (!storedProduct!.Equals(productEntity))
+        {
+            updatedProductEntity = await _productsRepository.UpdateAsync(productEntity, cancellationToken);
+        }
+
+        var storedProductPrices = await _productPricesRepository.GetAllByProductIdAsync(productKey, cancellationToken);
 
         var productPriceEntities = new List<ProductPriceEntity>();
 
         foreach (var storedProductPrice in storedProductPrices)
         {
-            var incomingProductPrice = product.Prices.FirstOrDefault(price => price.CurrencyKey == storedProductPrice.CurrencyKey);
+            var incomingProductPrice = product.Prices.FirstOrDefault(price => Guid.Parse(price.CurrencyKey).Equals(storedProductPrice.CurrencyKey));
             if (incomingProductPrice == null)
             {
-                await _productPricesRepository.UpdateStatusAsync(storedProductPrice.Key!, EntityStatus.Deleted, cancellationToken);
+                await _productPricesRepository.UpdateStatusAsync(storedProductPrice.Key!, EntityStatus.Archived, cancellationToken);
             }
-            else if (incomingProductPrice.Value != storedProductPrice.Price)
+            else if (!storedProductPrice.Equals(_productMapper.ToCreatePriceEntity(storedProduct.Key!, incomingProductPrice!)))
             {
-                var productPrice = _productMapper.ToCreatePriceEntity(updatedProductEntity.Key!, incomingProductPrice, storedProductPrice.Revision + 1);
-                var updatedProductPrice = await _productPricesRepository.UpdateAsync(storedProductPrice, cancellationToken);
-                if (updatedProductPrice == null)
-                {
-                    throw new InvalidOperationException("Product price update failed");
-                }
+                var productPrice = _productMapper.ToCreatePriceEntity(storedProduct.Key!, incomingProductPrice, storedProductPrice.Revision + 1);
+                var updatedProductPrice = await _productPricesRepository.UpdateAsync(productPrice, cancellationToken);
                 productPriceEntities.Add(updatedProductPrice);
             }
             else
@@ -162,7 +162,7 @@ public class ProductsManager : IProductsManager
         }
 
         // check for any new product price entities
-        var newProductPrices = product.Prices.Where(price => storedProductPrices.All(storedPrice => storedPrice.CurrencyKey != price.CurrencyKey));
+        var newProductPrices = product.Prices.Where(price => storedProductPrices.All(storedPrice => storedPrice.CurrencyKey != Guid.Parse(price.CurrencyKey)));
         foreach (var newProductPrice in newProductPrices)
         {
             var productPrice = _productMapper.ToCreatePriceEntity(updatedProductEntity.Key!, newProductPrice);
@@ -175,9 +175,26 @@ public class ProductsManager : IProductsManager
 
     public async Task DeleteProductAsync(string key, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting Product with key: {key}", key);
-        await _productsRepository.DeleteAsync(key, cancellationToken);
-        await _productPricesRepository.DeleteByProductIdAsync(key, cancellationToken);
-        _logger.LogInformation("Product with key: {key} deleted", key);
+        var productKey = Guid.Parse(key);
+        _logger.LogInformation("Deleting Product with key: {key}", productKey);
+        await _productsRepository.DeleteAsync(productKey, cancellationToken);
+        await _productPricesRepository.DeleteByProductKeyAsync(productKey, cancellationToken);
+        _logger.LogInformation("Product with key: {key} deleted", productKey);
+    }
+
+    public async Task<IEnumerable<ProductRevision>> GetProductRevisionsAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var productKey = Guid.Parse(key);
+        _logger.LogInformation("Getting Product Revisions for key: {key}", productKey);
+        var productRevisions = await _productsRepository.GetRevisionsAsync(productKey, cancellationToken);
+        return productRevisions.Select(revision => _productMapper.ToProductRevision(revision));
+    }
+
+    public async Task<ProductRevision> GetProductRevisionAsync(string key, int revision, CancellationToken cancellationToken = default)
+    {
+        var productKey = Guid.Parse(key);
+        _logger.LogInformation("Getting Product Revision for key: {key} and revision: {revision}", productKey, revision);
+        var productRevision = await _productsRepository.GetRevisionAsync(productKey, revision, cancellationToken);
+        return _productMapper.ToProductRevision(productRevision);
     }
 }

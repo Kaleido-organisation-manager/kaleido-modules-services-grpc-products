@@ -4,3 +4,6 @@ obj/
 *.Staging.json
 .vscode
 out/
+
+migrations/
+TestResults/

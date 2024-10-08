@@ -29,37 +29,37 @@ public class GetAllProductsByCategoryIdHandlerTests
     public async Task HandleAsync_ShouldReturnProducts_WhenSuccessful()
     {
         // Arrange
-        var categoryId = "test-category-id";
+        var categoryId = Guid.NewGuid();
         var products = new List<Product>
         {
             new Product { /* initialize properties */ },
             new Product { /* initialize properties */ }
         };
 
-        _productsManager.Setup(pm => pm.GetAllProductsByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>()))
+        _productsManager.Setup(pm => pm.GetAllProductsByCategoryIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
         // Act
-        var response = await _getAllProductsHandler.HandleAsync(categoryId);
+        var response = await _getAllProductsHandler.HandleAsync(categoryId.ToString());
 
         // Assert
         Assert.IsNotNull(response);
         Assert.IsTrue(response.Products.Count > 0);
         Assert.AreEqual(products.Count, response.Products.Count);
-        _productsManager.Verify(pm => pm.GetAllProductsByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>()), Times.Once);
+        _productsManager.Verify(pm => pm.GetAllProductsByCategoryIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [TestMethod]
     public async Task HandleAsync_ShouldThrowRpcException_WhenValidationExceptionOccurs()
     {
         // Arrange
-        var categoryId = "test-category-id";
-        _productsManager.Setup(pm => pm.GetAllProductsByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>()))
+        var categoryId = Guid.NewGuid();
+        _productsManager.Setup(pm => pm.GetAllProductsByCategoryIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ValidationException("Invalid category ID"));
 
         // Act & Assert
         var exception = await Assert.ThrowsExceptionAsync<RpcException>(
-            async () => await _getAllProductsHandler.HandleAsync(categoryId));
+            async () => await _getAllProductsHandler.HandleAsync(categoryId.ToString()));
 
         Assert.AreEqual(StatusCode.InvalidArgument, exception.Status.StatusCode);
         Assert.AreEqual("Invalid category ID", exception.Status.Detail);
@@ -69,13 +69,13 @@ public class GetAllProductsByCategoryIdHandlerTests
     public async Task HandleAsync_ShouldThrowRpcException_WhenUnexpectedExceptionOccurs()
     {
         // Arrange
-        var categoryId = "test-category-id";
+        var categoryId = Guid.NewGuid();
         _productsManager.Setup(pm => pm.GetAllProductsByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("An unexpected error occurred"));
 
         // Act & Assert
         var exception = await Assert.ThrowsExceptionAsync<RpcException>(
-            async () => await _getAllProductsHandler.HandleAsync(categoryId));
+            async () => await _getAllProductsHandler.HandleAsync(categoryId.ToString()));
 
         Assert.AreEqual(StatusCode.Internal, exception.Status.StatusCode);
         Assert.AreEqual("An unexpected error occurred", exception.Status.Detail);

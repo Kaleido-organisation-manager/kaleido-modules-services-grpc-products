@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Kaleido.Modules.Services.Grpc.Products.Mappers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Mappers;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -23,6 +24,8 @@ builder.Services.AddScoped<IDeleteProductHandler, DeleteProductHandler>();
 builder.Services.AddScoped<IGetAllProductsByCategoryIdHandler, GetAllProductsByCategoryIdHandler>();
 builder.Services.AddScoped<IGetAllProductsHandler, GetAllProductsHandler>();
 builder.Services.AddScoped<IGetProductHandler, GetProductHandler>();
+builder.Services.AddScoped<IGetProductRevisionHandler, GetProductRevisionHandler>();
+builder.Services.AddScoped<IGetProductRevisionsHandler, GetProductRevisionsHandler>();
 builder.Services.AddScoped<IUpdateProductHandler, UpdateProductHandler>();
 
 // Add Managers
@@ -45,9 +48,6 @@ var Configuration = builder.Configuration;
 builder.Services.AddDbContext<ProductsDbContext>(options =>
         options.UseNpgsql(Configuration.GetConnectionString("Products")));
 
-builder.Services.AddDbContext<ProductPricesDbContext>(options =>
-        options.UseNpgsql(Configuration.GetConnectionString("ProductPrices")));
-
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
@@ -58,4 +58,12 @@ app.MapGet("/", () => "Communication with gRPC endpoints must be made through a 
 
 app.MapHealthChecks("/health");
 
+using (var scope = app.Services.CreateScope())
+{
+        var dbContext = scope.ServiceProvider.GetRequiredService<ProductsDbContext>();
+        dbContext.Database.Migrate();  // Applies any pending migrations
+}
+
 app.Run();
+
+public partial class Program { }

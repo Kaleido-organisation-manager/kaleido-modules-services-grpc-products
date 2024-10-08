@@ -24,7 +24,8 @@ public class GetAllProductsByCategoryIdHandler : IGetAllProductsByCategoryIdHand
         _logger.LogInformation("Handling GetAllProductsByCategoryId request with CategoryId: {CategoryId}", categoryId);
         try
         {
-            var products = await _productsManager.GetAllProductsByCategoryIdAsync(categoryId, cancellationToken);
+            var categoryKey = Guid.Parse(categoryId);
+            var products = await _productsManager.GetAllProductsByCategoryIdAsync(categoryKey, cancellationToken);
             return new GetAllProductsResponse
             {
                 Products = { products }

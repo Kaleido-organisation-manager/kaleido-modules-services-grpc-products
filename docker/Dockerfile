@@ -6,14 +6,20 @@ WORKDIR /app
 
 # Copy the source code and build the application
 COPY ./src/Kaleido.Modules.Services.Grpc.Products ./
+RUN rm -f appsettings.**.json
 
 # Restore the dependencies
 RUN dotnet restore
+
+RUN dotnet build
 
 RUN dotnet publish -c Release -o out
 
 # Build the runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
+ENV "Kestrel:EndpointDefaults:Protocols"="Http2"
+
 WORKDIR /app
 COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "Kaleido.Modules.Services.Grpc.Products.dll"]

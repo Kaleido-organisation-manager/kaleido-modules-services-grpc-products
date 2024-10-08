@@ -39,8 +39,13 @@ public class ProductValidator : IProductValidator
         await Task.CompletedTask;
     }
 
-    public Task ValidateUpdateAsync(Product product, CancellationToken cancellationToken = default)
+    public async Task ValidateUpdateAsync(Product product, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(product.Key))
+        {
+            throw new ValidationException("Product Key is required");
+        }
+
+        await ValidateCreateAsync(product, cancellationToken);
     }
 }

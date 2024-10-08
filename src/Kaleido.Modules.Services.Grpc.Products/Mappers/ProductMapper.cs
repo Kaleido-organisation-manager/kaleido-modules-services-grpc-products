@@ -10,42 +10,66 @@ public class ProductMapper : IProductMapper
     {
         return new Product
         {
-            Key = productEntity.Key,
+            Key = productEntity.Key.ToString(),
             Name = productEntity.Name,
             Description = productEntity.Description,
+            CategoryKey = productEntity.CategoryKey.ToString(),
+            ImageUrl = productEntity.ImageUrl,
             Prices = {productPriceEntities.Select(x => new ProductPrice
             {
                 Value = x.Price,
-                CurrencyKey = x.CurrencyKey
+                CurrencyKey = x.CurrencyKey.ToString()
             }).ToList()}
         };
     }
 
     public ProductEntity ToCreateEntity(Product product, int revision = 1)
     {
+        var productKey = Guid.Parse(product.Key);
+        if (productKey == Guid.Empty)
+        {
+            productKey = Guid.NewGuid();
+        }
+
         return new ProductEntity
         {
-            Key = Guid.NewGuid().ToString(),
+            Key = productKey,
             Name = product.Name,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = DateTime.UtcNow,
             Status = EntityStatus.Active,
             Revision = revision,
             Description = product.Description,
-            CategoryKey = product.CategoryKey
+            CategoryKey = Guid.Parse(product.CategoryKey),
+            ImageUrl = product.ImageUrl
         };
     }
 
-    public ProductPriceEntity ToCreatePriceEntity(string productKey, ProductPrice productPrice, int revision = 1)
+    public ProductPriceEntity ToCreatePriceEntity(Guid productKey, ProductPrice productPrice, int revision = 1)
     {
         return new ProductPriceEntity
         {
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = DateTime.UtcNow,
             Key = productKey,
-            Revision = 1,
+            Revision = revision,
             Status = EntityStatus.Active,
             ProductKey = productKey,
             Price = productPrice.Value,
-            CurrencyKey = productPrice.CurrencyKey
+            CurrencyKey = Guid.Parse(productPrice.CurrencyKey)
+        };
+    }
+
+    public ProductRevision ToProductRevision(ProductEntity productRevisionEntity)
+    {
+        return new ProductRevision
+        {
+            Key = productRevisionEntity.Key.ToString(),
+            Name = productRevisionEntity.Name,
+            Description = productRevisionEntity.Description,
+            CategoryKey = productRevisionEntity.CategoryKey.ToString(),
+            ImageUrl = productRevisionEntity.ImageUrl,
+            Revision = productRevisionEntity.Revision,
+            Status = productRevisionEntity.Status.ToString(),
+            CreatedAt = productRevisionEntity.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ssZ")
         };
     }
 }

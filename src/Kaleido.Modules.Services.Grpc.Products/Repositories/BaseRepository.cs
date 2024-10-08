@@ -1,5 +1,5 @@
-using System.Resources;
 using Kaleido.Modules.Services.Grpc.Products.Constants;
+using Kaleido.Modules.Services.Grpc.Products.Exceptions;
 using Kaleido.Modules.Services.Grpc.Products.Models;
 using Kaleido.Modules.Services.Grpc.Products.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -21,15 +21,14 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
         _dbSet = dbSet;
     }
 
-    public async Task<T?> GetAsync(string key, CancellationToken cancellationToken = default)
+    public async Task<T> GetAsync(Guid key, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Get called with Id: {Id}", key);
         // Get item where id is key and state is active
         var entity = await _dbSet.Where(p => p.Key == key && p.Status == EntityStatus.Active).FirstOrDefaultAsync(cancellationToken);
         if (entity == null)
         {
-            _logger.LogWarning("{EntityName} with Key: {Id} not found", typeof(T).Name, key);
-            return null;
+            throw new EntityNotFoundException($"{typeof(T).Name} with key: {key} not found");
         }
         return entity;
     }
@@ -54,7 +53,7 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
 
     public async Task<T> UpdateAsync(T entity, CancellationToken cancellationToken = default)
     {
-        if (entity.Key == null)
+        if (entity.Key == Guid.Empty)
         {
             throw new ArgumentNullException(nameof(entity.Key));
         }
@@ -68,7 +67,7 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
         return storedEntity;
     }
 
-    public async Task<T?> UpdateStatusAsync(string key, EntityStatus status, CancellationToken cancellationToken = default)
+    public async Task<T?> UpdateStatusAsync(Guid key, EntityStatus status, CancellationToken cancellationToken = default)
     {
         var entity = await GetAsync(key, cancellationToken);
         if (entity == null)
@@ -78,12 +77,35 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
 
         _logger.LogInformation("Updating {EntityName} with key: {Key} to status: {Status}", typeof(T).Name, entity.Key, status);
         entity.Status = status;
-        return await CreateAsync(entity, cancellationToken);
+        var stored = _dbContext.Update(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return stored.Entity;
     }
 
-
-    public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid key, CancellationToken cancellationToken = default)
     {
         await UpdateStatusAsync(key, EntityStatus.Deleted, cancellationToken);
+    }
+
+    public async Task<IEnumerable<T>> GetRevisionsAsync(Guid key, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GetRevisions called with Id: {Id}", key);
+        return await _dbSet
+            .Where(p => p.Key == key)
+            .OrderByDescending(p => p.Revision)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<T> GetRevisionAsync(Guid key, int revision, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GetRevision called with Id: {Id} and Revision: {Revision}", key, revision);
+        var entity = await _dbSet
+            .Where(p => p.Key == key && p.Revision == revision)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (entity == null)
+        {
+            throw new EntityNotFoundException($"{typeof(T).Name} with key: {key} and revision: {revision} not found");
+        }
+        return entity;
     }
 }

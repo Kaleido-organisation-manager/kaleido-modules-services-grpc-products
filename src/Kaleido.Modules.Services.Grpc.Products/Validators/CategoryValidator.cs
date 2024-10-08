@@ -13,13 +13,13 @@ public class CategoryValidator : ICategoryValidator
         _logger = logger;
     }
 
-    public Task ValidateIdAsync(string id, CancellationToken cancellationToken = default)
+    public Task ValidateIdAsync(Guid key, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Validating CategoryId: {CategoryId}", id);
+        _logger.LogInformation("Validating CategoryKey: {CategoryId}", key);
 
-        if (string.IsNullOrWhiteSpace(id))
+        if (Guid.Empty == key)
         {
-            throw new ValidationException("Category id can not be null or empty.");
+            throw new ValidationException("Category key can not be null or empty.");
         }
 
         // TODO: Add validation logic that checks if the category exists against the category gRPC service

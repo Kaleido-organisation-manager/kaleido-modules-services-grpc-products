@@ -4,13 +4,14 @@ using Kaleido.Modules.Services.Grpc.Products.Handlers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Managers.Interfaces;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Handlers;
-public class GetProductHandler : IGetProductHandler
-{
-    private readonly IProductsManager _productsManager;
-    private readonly ILogger<GetProductHandler> _logger;
 
-    public GetProductHandler(
-        ILogger<GetProductHandler> logger,
+public class GetProductRevisionsHandler : IGetProductRevisionsHandler
+{
+    private readonly ILogger<GetProductRevisionsHandler> _logger;
+    private readonly IProductsManager _productsManager;
+
+    public GetProductRevisionsHandler(
+        ILogger<GetProductRevisionsHandler> logger,
         IProductsManager productsManager
         )
     {
@@ -18,13 +19,17 @@ public class GetProductHandler : IGetProductHandler
         _productsManager = productsManager;
     }
 
-    public async Task<GetProductResponse> HandleAsync(string key, CancellationToken cancellationToken = default)
+    public async Task<GetProductRevisionsResponse> HandleAsync(string key, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Handling GetProduct request for key: {Key}", key);
-        Product? product;
+        _logger.LogInformation("Handling GetProductRevisions request for key: {Key}", key);
         try
         {
-            product = await _productsManager.GetProductAsync(key, cancellationToken);
+            var productRevisions = await _productsManager.GetProductRevisionsAsync(key, cancellationToken);
+
+            return new GetProductRevisionsResponse
+            {
+                Revisions = { productRevisions }
+            };
         }
         catch (EntityNotFoundException ex)
         {
@@ -33,12 +38,8 @@ public class GetProductHandler : IGetProductHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while retrieving product with key: {Key}", key);
+            _logger.LogError(ex, "An error occurred while retrieving product revisions with key: {Key}", key);
             throw new RpcException(new Status(StatusCode.Internal, ex.Message));
         }
-        return new GetProductResponse
-        {
-            Product = product
-        };
     }
 }

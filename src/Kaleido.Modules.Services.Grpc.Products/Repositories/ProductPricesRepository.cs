@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Repositories;
 
-public class ProductPricesRepository : BaseRepository<ProductPriceEntity, ProductPricesDbContext>, IProductPricesRepository
+public class ProductPricesRepository : BaseRepository<ProductPriceEntity, ProductsDbContext>, IProductPricesRepository
 {
-    public ProductPricesRepository(ILogger<ProductPricesRepository> logger, ProductPricesDbContext dbContext)
+    public ProductPricesRepository(ILogger<ProductPricesRepository> logger, ProductsDbContext dbContext)
     : base(logger, dbContext, dbContext.ProductPrices)
     {
     }
 
-    public async Task<IEnumerable<ProductPriceEntity>> GetAllByProductIdAsync(string productId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProductPriceEntity>> GetAllByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Getting all product prices by product id: {ProductId}", productId);
 
@@ -35,12 +35,12 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
         return productPrices;
     }
 
-    public async Task DeleteByProductIdAsync(string productId, CancellationToken cancellationToken = default)
+    public async Task DeleteByProductKeyAsync(Guid productKey, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting product prices by product id: {ProductId}", productId);
+        _logger.LogInformation("Deleting product prices by product id: {ProductId}", productKey);
 
         // resolve product prices by product id
-        var productPrices = await GetAllByProductIdAsync(productId, cancellationToken);
+        var productPrices = await GetAllByProductIdAsync(productKey, cancellationToken);
 
         // update all price states to deleted
         foreach (var productPrice in productPrices)
