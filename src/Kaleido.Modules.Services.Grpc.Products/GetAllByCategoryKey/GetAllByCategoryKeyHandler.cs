@@ -1,10 +1,11 @@
 using Grpc.Core;
+using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
 using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetAllByCategoryKey;
 
-public class GetAllByCategoryKeyHandler : IBaseHandler<GetAllProductsByCategoryIdRequest, GetAllProductsResponse>
+public class GetAllByCategoryKeyHandler : IBaseHandler<GetAllProductsByCategoryKeyRequest, GetAllProductsByCategoryKeyResponse>
 {
     private readonly IGetAllByCategoryKeyManager _getAllByCategoryKeyManager;
     private readonly ILogger<GetAllByCategoryKeyHandler> _logger;
@@ -18,13 +19,13 @@ public class GetAllByCategoryKeyHandler : IBaseHandler<GetAllProductsByCategoryI
         _logger = logger;
     }
 
-    public async Task<GetAllProductsResponse> HandleAsync(GetAllProductsByCategoryIdRequest request, CancellationToken cancellationToken = default)
+    public async Task<GetAllProductsByCategoryKeyResponse> HandleAsync(GetAllProductsByCategoryKeyRequest request, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Handling GetAllProductsByCategoryId request with CategoryId: {CategoryId}", request.CategoryKey);
         try
         {
             var products = await _getAllByCategoryKeyManager.GetAllAsync(request.CategoryKey, cancellationToken);
-            return new GetAllProductsResponse
+            return new GetAllProductsByCategoryKeyResponse
             {
                 Products = { products }
             };

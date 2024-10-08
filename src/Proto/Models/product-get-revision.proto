@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package Kaleido.Grpc.Products;
+
+import "Models/product-common.proto";
+
+message GetProductRevisionRequest {
+  string key = 1;
+  int32 revision = 2;
+}
+
+message GetProductRevisionResponse {
+  ProductRevision revision = 1;
+}

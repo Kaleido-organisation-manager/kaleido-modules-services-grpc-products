@@ -1,6 +1,7 @@
 using Grpc.Core;
 using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
 using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
+using Kaleido.Grpc.Products;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Create;
 
@@ -24,7 +25,11 @@ public class CreateProductHandler : IBaseHandler<CreateProductRequest, CreatePro
         _logger.LogInformation("Handling CreateProduct request for name: {Name}", request.Product.Name);
         try
         {
-            return await _createProductManager.CreateAsync(request.Product, cancellationToken);
+            var storedProduct = await _createProductManager.CreateAsync(request.Product, cancellationToken);
+            return new CreateProductResponse
+            {
+                Product = storedProduct
+            };
         }
         catch (ValidationException ex)
         {

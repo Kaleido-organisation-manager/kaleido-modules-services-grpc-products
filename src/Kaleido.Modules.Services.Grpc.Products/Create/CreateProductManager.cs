@@ -1,3 +1,4 @@
+using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
@@ -34,7 +35,7 @@ public class CreateProductManager : ICreateProductManager
         _productsRepository = productRepository;
     }
 
-    public async Task<CreateProductResponse> CreateAsync(CreateProduct createProduct, CancellationToken cancellationToken = default)
+    public async Task<Product> CreateAsync(CreateProduct createProduct, CancellationToken cancellationToken = default)
     {
         var priceList = createProduct.Prices.Select(price => new ProductPrice
         {
@@ -64,9 +65,6 @@ public class CreateProductManager : ICreateProductManager
 
         _logger.LogInformation("Product with key: {key} saved", product.Key);
         var storedProduct = _productMapper.FromEntities(createdProductEntity, productPriceEntities);
-        return new CreateProductResponse
-        {
-            Product = storedProduct
-        };
+        return storedProduct;
     }
 }

@@ -19,6 +19,7 @@ using Kaleido.Modules.Services.Grpc.Products.GetAllByCategoryKey;
 using Kaleido.Modules.Services.Grpc.Products.GetProductRevisions;
 using Kaleido.Modules.Services.Grpc.Products.GetProductPriceRevision;
 using Kaleido.Modules.Services.Grpc.Products.GetProductPriceRevisions;
+using Kaleido.Grpc.Products;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,8 +34,8 @@ builder.Services.AddScoped<IBaseHandler<UpdateProductRequest, UpdateProductRespo
 builder.Services.AddScoped<IBaseHandler<DeleteProductRequest, DeleteProductResponse>, DeleteProductHandler>();
 builder.Services.AddScoped<IBaseHandler<GetProductRequest, GetProductResponse>, GetProductHandler>();
 builder.Services.AddScoped<IBaseHandler<GetAllProductsRequest, GetAllProductsResponse>, GetAllProductHandler>();
-builder.Services.AddScoped<IBaseHandler<GetAllProductsByCategoryIdRequest, GetAllProductsResponse>, GetAllByCategoryKeyHandler>();
-builder.Services.AddScoped<IBaseHandler<GetProductRequest, GetProductRevisionsResponse>, GetProductRevisionsHandler>();
+builder.Services.AddScoped<IBaseHandler<GetAllProductsByCategoryKeyRequest, GetAllProductsByCategoryKeyResponse>, GetAllByCategoryKeyHandler>();
+builder.Services.AddScoped<IBaseHandler<GetProductRevisionsRequest, GetProductRevisionsResponse>, GetProductRevisionsHandler>();
 builder.Services.AddScoped<IBaseHandler<GetProductPriceRevisionRequest, GetProductPriceRevisionResponse>, GetProductPriceRevisionHandler>();
 builder.Services.AddScoped<IBaseHandler<GetProductPriceRevisionsRequest, GetProductPriceRevisionsResponse>, GetProductPriceRevisionsHandler>();
 

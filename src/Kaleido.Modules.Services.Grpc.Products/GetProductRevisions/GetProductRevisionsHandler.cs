@@ -1,8 +1,9 @@
+using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetProductRevisions;
 
-public class GetProductRevisionsHandler : IBaseHandler<GetProductRequest, GetProductRevisionsResponse>
+public class GetProductRevisionsHandler : IBaseHandler<GetProductRevisionsRequest, GetProductRevisionsResponse>
 {
     private readonly IGetProductRevisionsManager _manager;
     private readonly ILogger<GetProductRevisionsHandler> _logger;
@@ -15,7 +16,7 @@ public class GetProductRevisionsHandler : IBaseHandler<GetProductRequest, GetPro
         _logger = logger;
     }
 
-    public async Task<GetProductRevisionsResponse> HandleAsync(GetProductRequest request, CancellationToken cancellationToken)
+    public async Task<GetProductRevisionsResponse> HandleAsync(GetProductRevisionsRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Handling GetProductRevisions request for key: {Key}", request.Key);
 

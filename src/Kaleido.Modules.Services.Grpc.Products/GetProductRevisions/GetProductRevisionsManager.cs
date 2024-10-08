@@ -1,3 +1,4 @@
+using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 

@@ -1,4 +1,6 @@
 using Grpc.Core;
+using Kaleido.Grpc.Products;
+using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
 using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Delete;
@@ -25,7 +27,15 @@ public class DeleteProductHandler : IBaseHandler<DeleteProductRequest, DeletePro
         {
             var key = request.Key;
             await _deleteProductManager.DeleteAsync(key, cancellationToken);
-            return new DeleteProductResponse();
+            return new DeleteProductResponse()
+            {
+                Key = key
+            };
+        }
+        catch (EntityNotFoundException ex)
+        {
+            _logger.LogError(ex, "An error occurred while deleting product with key: {Key}", request.Key);
+            throw new RpcException(new Status(StatusCode.NotFound, ex.Message));
         }
         catch (Exception ex)
         {

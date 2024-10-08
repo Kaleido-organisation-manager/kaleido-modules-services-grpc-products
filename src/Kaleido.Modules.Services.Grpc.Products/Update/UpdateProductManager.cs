@@ -4,6 +4,7 @@ using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
+using Kaleido.Grpc.Products;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Update;
 

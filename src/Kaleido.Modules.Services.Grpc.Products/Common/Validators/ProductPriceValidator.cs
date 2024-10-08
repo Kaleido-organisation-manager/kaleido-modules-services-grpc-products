@@ -1,3 +1,4 @@
+using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
 

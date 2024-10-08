@@ -1,3 +1,5 @@
+using Kaleido.Grpc.Products;
+
 namespace Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
 
 public interface IProductPriceValidator

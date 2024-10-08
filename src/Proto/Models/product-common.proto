@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package Kaleido.Grpc.Products;
+
+message Product {
+  string key = 1;
+  string name = 2;
+  string description = 3;
+  repeated ProductPrice prices = 4;
+  string categoryKey = 5;
+  string imageUrl = 6;
+}
+
+message ProductPrice {
+  string currencyKey = 1;
+  float value = 2;
+}
+
+message ProductRevision {
+  string key = 1;
+  string name = 2;
+  string description = 3;
+  string categoryKey = 4;
+  string imageUrl = 5;
+  int32 revision = 6;
+  string status = 7;
+  string createdAt = 8;
+}
+
+message ProductPriceRevision {
+  string currencyKey = 1;
+  float value = 2;
+  int32 revision = 3;
+  string status = 4;
+  string createdAt = 5;
+}
