@@ -2,10 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Kaleido.Modules.Services.Grpc.Products.Common.Configuration;
-using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using System.Diagnostics;
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -30,9 +27,6 @@ using (var scope = host.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var process = Process.Start("dotnet", "ef migrations add Products");
-        await process.WaitForExitAsync();
-
         var context = services.GetRequiredService<ProductsDbContext>();
 
         await context.Database.MigrateAsync();

@@ -61,6 +61,16 @@ builder.Services.AddScoped<IProductPricesRepository, ProductPricesRepository>();
 // Add Validators
 builder.Services.AddScoped<IProductValidator, ProductValidator>();
 builder.Services.AddScoped<IProductPriceValidator, ProductPriceValidator>();
+builder.Services.AddScoped<IRequestValidator<CreateProductRequest>, CreateRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<UpdateProductRequest>, UpdateRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<DeleteProductRequest>, DeleteRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<GetProductRequest>, GetRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<GetAllProductsRequest>, GetAllRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<GetAllProductsByCategoryKeyRequest>, GetAllByCategoryKeyRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<GetProductRevisionRequest>, GetProductRevisionRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<GetProductRevisionsRequest>, GetProductRevisionsRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<GetProductPriceRevisionRequest>, GetProductPriceRevisionRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<GetProductPriceRevisionsRequest>, GetProductPriceRevisionsRequestValidator>();
 
 
 var Configuration = builder.Configuration;
