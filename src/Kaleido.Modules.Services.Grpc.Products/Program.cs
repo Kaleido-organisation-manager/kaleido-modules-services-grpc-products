@@ -29,22 +29,22 @@ builder.Services.AddGrpc();
 
 // Add Handlers
 builder.Services.AddScoped<IBaseHandler<GetProductRevisionRequest, GetProductRevisionResponse>, GetProductRevisionHandler>();
-builder.Services.AddScoped<IBaseHandler<CreateProductRequest, CreateProductResponse>, CreateProductHandler>();
-builder.Services.AddScoped<IBaseHandler<UpdateProductRequest, UpdateProductResponse>, UpdateProductHandler>();
-builder.Services.AddScoped<IBaseHandler<DeleteProductRequest, DeleteProductResponse>, DeleteProductHandler>();
-builder.Services.AddScoped<IBaseHandler<GetProductRequest, GetProductResponse>, GetProductHandler>();
-builder.Services.AddScoped<IBaseHandler<GetAllProductsRequest, GetAllProductsResponse>, GetAllProductHandler>();
+builder.Services.AddScoped<IBaseHandler<CreateProductRequest, CreateProductResponse>, CreateHandler>();
+builder.Services.AddScoped<IBaseHandler<UpdateProductRequest, UpdateProductResponse>, UpdateHandler>();
+builder.Services.AddScoped<IBaseHandler<DeleteProductRequest, DeleteProductResponse>, DeleteHandler>();
+builder.Services.AddScoped<IBaseHandler<GetProductRequest, GetProductResponse>, GetHandler>();
+builder.Services.AddScoped<IBaseHandler<GetAllProductsRequest, GetAllProductsResponse>, GetAllHandler>();
 builder.Services.AddScoped<IBaseHandler<GetAllProductsByCategoryKeyRequest, GetAllProductsByCategoryKeyResponse>, GetAllByCategoryKeyHandler>();
 builder.Services.AddScoped<IBaseHandler<GetProductRevisionsRequest, GetProductRevisionsResponse>, GetProductRevisionsHandler>();
 builder.Services.AddScoped<IBaseHandler<GetProductPriceRevisionRequest, GetProductPriceRevisionResponse>, GetProductPriceRevisionHandler>();
 builder.Services.AddScoped<IBaseHandler<GetProductPriceRevisionsRequest, GetProductPriceRevisionsResponse>, GetProductPriceRevisionsHandler>();
 
 // Add Managers
-builder.Services.AddScoped<IGetProductManager, GetProductManager>();
-builder.Services.AddScoped<ICreateProductManager, CreateProductManager>();
-builder.Services.AddScoped<IUpdateProductManager, UpdateProductManager>();
-builder.Services.AddScoped<IDeleteProductManager, DeleteProductManager>();
-builder.Services.AddScoped<IGetAllProductManager, GetAllProductManager>();
+builder.Services.AddScoped<IGetManager, GetManager>();
+builder.Services.AddScoped<ICreateManager, CreateManager>();
+builder.Services.AddScoped<IUpdateManager, UpdateManager>();
+builder.Services.AddScoped<IDeleteManager, DeleteManager>();
+builder.Services.AddScoped<IGetAllManager, GetAllManager>();
 builder.Services.AddScoped<IGetAllByCategoryKeyManager, GetAllByCategoryKeyManager>();
 builder.Services.AddScoped<IGetProductRevisionManager, GetProductRevisionManager>();
 builder.Services.AddScoped<IGetProductRevisionsManager, GetProductRevisionsManager>();
@@ -59,7 +59,6 @@ builder.Services.AddScoped<IProductsRepository, ProductsRepository>();
 builder.Services.AddScoped<IProductPricesRepository, ProductPricesRepository>();
 
 // Add Validators
-builder.Services.AddScoped<ICategoryValidator, CategoryValidator>();
 builder.Services.AddScoped<IProductValidator, ProductValidator>();
 builder.Services.AddScoped<IProductPriceValidator, ProductPriceValidator>();
 

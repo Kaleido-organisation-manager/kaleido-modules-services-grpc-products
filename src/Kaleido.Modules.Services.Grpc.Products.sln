@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Gr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Client", "Kaleido.Modules.Services.Grpc.Products.Client\Kaleido.Modules.Services.Grpc.Products.Client.csproj", "{2D7689A1-A741-4896-88BE-298FCBF9A640}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Migrations", "Kaleido.Modules.Services.Grpc.Products.Migrations\Kaleido.Modules.Services.Grpc.Products.Migrations.csproj", "{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Tests.Unit", "Kaleido.Modules.Services.Grpc.Products.Tests.Unit\Kaleido.Modules.Services.Grpc.Products.Tests.Unit.csproj", "{D5733916-CAE2-4EDD-B35A-8E2539F8E173}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{2D7689A1-A741-4896-88BE-298FCBF9A640}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D7689A1-A741-4896-88BE-298FCBF9A640}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D7689A1-A741-4896-88BE-298FCBF9A640}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

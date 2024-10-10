@@ -21,16 +21,12 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
         _dbSet = dbSet;
     }
 
-    public async Task<T> GetAsync(Guid key, CancellationToken cancellationToken = default)
+    public async Task<T?> GetAsync(Guid key, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Get called with Id: {Id}", key);
         // Get item where id is key and state is active
         var entity = await _dbSet.Where(p => p.Key == key && p.Status == EntityStatus.Active).FirstOrDefaultAsync(cancellationToken);
-        if (entity == null)
-        {
-            throw new EntityNotFoundException($"{typeof(T).Name} with key: {key} not found");
-        }
-        return entity!;
+        return entity;
     }
 
     public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -96,16 +92,12 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<T> GetRevisionAsync(Guid key, int revision, CancellationToken cancellationToken = default)
+    public async Task<T?> GetRevisionAsync(Guid key, int revision, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GetRevision called with Id: {Id} and Revision: {Revision}", key, revision);
         var entity = await _dbSet
             .Where(p => p.Key == key && p.Revision == revision)
             .FirstOrDefaultAsync(cancellationToken);
-        if (entity == null)
-        {
-            throw new EntityNotFoundException($"{typeof(T).Name} with key: {key} and revision: {revision} not found");
-        }
         return entity;
     }
 }

@@ -27,6 +27,7 @@ public class GetProductPriceRevisionsManager : IGetProductPriceRevisionsManager
         var productKey = Guid.Parse(key);
         var currencyKey = Guid.Parse(currency);
         var productPrices = await _productPricesRepository.GetAllRevisionsAsync(productKey, currencyKey, cancellationToken);
-        return productPrices.Select(p => _productMapper.ToProductPriceRevision(p));
+        var productPriceRevisions = productPrices.Select(p => _productMapper.ToProductPriceRevision(p)).ToList();
+        return productPriceRevisions;
     }
 }

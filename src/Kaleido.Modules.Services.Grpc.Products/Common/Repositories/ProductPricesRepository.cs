@@ -14,7 +14,7 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
     {
     }
 
-    public async Task<IEnumerable<ProductPriceEntity>> GetAllByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProductPriceEntity>> GetAllByProductKeyAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Getting all product prices by product id: {ProductId}", productId);
 
@@ -41,7 +41,7 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
         _logger.LogInformation("Deleting product prices by product id: {ProductId}", productKey);
 
         // resolve product prices by product id
-        var productPrices = await GetAllByProductIdAsync(productKey, cancellationToken);
+        var productPrices = await GetAllByProductKeyAsync(productKey, cancellationToken);
 
         // update all price states to deleted
         foreach (var productPrice in productPrices)
@@ -50,7 +50,7 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
         }
     }
 
-    public async Task<ProductPriceEntity> GetRevisionAsync(Guid productKey, Guid currencyKey, int revision, CancellationToken cancellationToken = default)
+    public async Task<ProductPriceEntity?> GetRevisionAsync(Guid productKey, Guid currencyKey, int revision, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Getting product price revision for product id: {ProductId} and currency id: {CurrencyId} and revision: {Revision}", productKey, currencyKey, revision);
 
@@ -60,10 +60,6 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
             .Where(productPrice => productPrice.Revision == revision)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (productPrice == null)
-        {
-            throw new EntityNotFoundException($"Product price revision for product id: {productKey} and currency id: {currencyKey} and revision: {revision} not found");
-        }
         return productPrice;
     }
 

@@ -1,0 +1,26 @@
+# Use dotnet 8 image as base to build the app
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the source code and build the application
+COPY ./src/Kaleido.Modules.Services.Grpc.Products.Migrations ./
+RUN rm -f appsettings.**.json
+
+# Restore the dependencies
+RUN dotnet restore
+
+RUN dotnet build
+
+RUN dotnet publish -c Release -o out
+
+# Build the runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
+ENV "Kestrel:EndpointDefaults:Protocols"="Http2"
+RUN dotnet tool install --global dotnet-ef
+
+WORKDIR /app
+COPY --from=build-env /app/out .
+ENTRYPOINT ["dotnet", "Kaleido.Modules.Services.Grpc.Products.Migrations.dll"]

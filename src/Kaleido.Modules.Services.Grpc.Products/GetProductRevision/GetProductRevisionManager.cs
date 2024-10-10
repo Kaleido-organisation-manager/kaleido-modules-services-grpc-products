@@ -21,10 +21,10 @@ public class GetProductRevisionManager : IGetProductRevisionManager
         _mapper = mapper;
     }
 
-    public async Task<ProductRevision> GetAsync(string key, int revision, CancellationToken cancellationToken = default)
+    public async Task<ProductRevision?> GetAsync(string key, int revision, CancellationToken cancellationToken = default)
     {
         var productKey = Guid.Parse(key);
         var product = await _productRepository.GetRevisionAsync(productKey, revision, cancellationToken);
-        return _mapper.ToProductRevision(product);
+        return product == null ? null : _mapper.ToProductRevision(product);
     }
 }

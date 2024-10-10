@@ -26,6 +26,6 @@ public class GetProductRevisionsManager : IGetProductRevisionsManager
         var productKey = Guid.Parse(key);
         _logger.LogInformation("Getting all product revisions for key: {Key}", key);
         var products = await _productRepository.GetAllRevisionsAsync(productKey, cancellationToken);
-        return products.Select(_mapper.ToProductRevision);
+        return products.Select(_mapper.ToProductRevision).ToList();
     }
 }

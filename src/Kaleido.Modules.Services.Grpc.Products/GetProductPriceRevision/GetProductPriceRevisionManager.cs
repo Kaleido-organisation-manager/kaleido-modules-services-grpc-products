@@ -24,12 +24,12 @@ public class GetProductPriceRevisionManager : IGetProductPriceRevisionManager
         _productMapper = productMapper;
     }
 
-    public async Task<ProductPriceRevision> GetAsync(string key, string currency, int revision, CancellationToken cancellationToken = default)
+    public async Task<ProductPriceRevision?> GetAsync(string key, string currency, int revision, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Getting product price revision for key: {Key} and revision: {Revision}", key, revision);
         var productKey = Guid.Parse(key);
         var currencyKey = Guid.Parse(currency);
         var productPrice = await _productPriceRevisionRepository.GetRevisionAsync(productKey, currencyKey, revision, cancellationToken);
-        return _productMapper.ToProductPriceRevision(productPrice);
+        return productPrice == null ? null : _productMapper.ToProductPriceRevision(productPrice);
     }
 }

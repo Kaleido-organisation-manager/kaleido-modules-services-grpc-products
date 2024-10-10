@@ -2,6 +2,8 @@ using Grpc.Core;
 using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetProductPriceRevisions;
 
@@ -9,23 +11,29 @@ public class GetProductPriceRevisionsHandler : IBaseHandler<GetProductPriceRevis
 {
     private readonly IGetProductPriceRevisionsManager _manager;
     private readonly ILogger<GetProductPriceRevisionsHandler> _logger;
+    public IRequestValidator<GetProductPriceRevisionsRequest> Validator { get; }
+
     public GetProductPriceRevisionsHandler(
         IGetProductPriceRevisionsManager manager,
-        ILogger<GetProductPriceRevisionsHandler> logger
+        ILogger<GetProductPriceRevisionsHandler> logger,
+        IRequestValidator<GetProductPriceRevisionsRequest> validator
         )
     {
         _manager = manager;
         _logger = logger;
+        Validator = validator;
     }
 
     public async Task<GetProductPriceRevisionsResponse> HandleAsync(GetProductPriceRevisionsRequest request, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Handling GetProductPriceRevisions request for key: {Key}", request.Key);
+
+        var validationResult = await Validator.ValidateAsync(request, cancellationToken);
+        validationResult.ThrowIfInvalid();
+
         try
         {
-            var key = request.Key;
-            var currency = request.CurrencyKey;
-            var revisions = await _manager.GetAllAsync(key, currency, cancellationToken);
+            var revisions = await _manager.GetAllAsync(request.Key, request.CurrencyKey, cancellationToken);
             return new GetProductPriceRevisionsResponse
             {
                 Revisions = { revisions }
