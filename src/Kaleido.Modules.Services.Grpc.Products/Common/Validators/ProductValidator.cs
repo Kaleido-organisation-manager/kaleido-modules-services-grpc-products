@@ -99,6 +99,11 @@ public class ProductValidator : IProductValidator
         return validationResult;
     }
 
+    public ValidationResult ValidateKeyFormat(string productKey)
+    {
+        return ValidateCommonRulesForProductKey(productKey, out var _);
+    }
+
     private ValidationResult ValidateCommonRulesForProductKey(string productKey, out Guid guid)
     {
         var validationResult = new ValidationResult();

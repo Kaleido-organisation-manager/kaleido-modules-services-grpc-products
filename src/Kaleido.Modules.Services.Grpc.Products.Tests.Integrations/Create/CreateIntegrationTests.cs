@@ -1,105 +1,27 @@
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
-using DotNet.Testcontainers.Images;
-using Grpc.Net.Client;
 using Kaleido.Grpc.Products;
-using Testcontainers.PostgreSql;
+using Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures;
+using static Kaleido.Grpc.Products.GrpcProducts;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Create;
 
-public class CreateIntegrationTests : IAsyncLifetime
+public class CreateIntegrationTests : IClassFixture<InfrastructureFixture>
 {
-    private const string MIGRATION_IMAGE_NAME = "kaleido-modules-services-grpc-products-migrations:latest";
-    private const string GRPC_IMAGE_NAME = "kaleido-modules-services-grpc-products:latest";
+    private readonly InfrastructureFixture _fixture;
 
-    private const string DB_NAME = "products";
-    private const string DB_USER = "postgres";
-    private const string DB_PASSWORD = "postgres";
-
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:15-alpine")
-        .WithDatabase(DB_NAME)
-        .WithUsername(DB_USER)
-        .WithPassword(DB_PASSWORD)
-        .WithHostname("localhost")
-        .WithExtraHost("host.docker.internal", "host-gateway")
-        .Build();
-
-    private readonly IFutureDockerImage _migrationImage = new ImageFromDockerfileBuilder()
-        .WithDockerfileDirectory(Path.Join(CommonDirectoryPath.GetSolutionDirectory().DirectoryPath, "../"))
-        .WithDockerfile("docker/Grpc.Products.Migrations/Dockerfile")
-        .WithName(MIGRATION_IMAGE_NAME)
-        .Build();
-
-    private readonly IFutureDockerImage _grpcImage = new ImageFromDockerfileBuilder()
-        .WithDockerfileDirectory(Path.Join(CommonDirectoryPath.GetSolutionDirectory().DirectoryPath, "../"))
-        .WithDockerfile("docker/Grpc.Products/Dockerfile")
-        .WithName(GRPC_IMAGE_NAME)
-        .Build();
-
-    private IContainer _migrationContainer = null!;
-    private IContainer _grpcContainer = null!;
-
-    public async Task InitializeAsync()
+    public CreateIntegrationTests(InfrastructureFixture fixture)
     {
-        await _postgres.StartAsync();
-        await _postgres.WaitForPort();
-
-        await _migrationImage.CreateAsync();
-        await _grpcImage.CreateAsync();
-
-
-        var dbConnectionString = $"Server=host.docker.internal;Port={_postgres.GetMappedPublicPort(5432)};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
-        Console.WriteLine($"ConnectionString:Products: {dbConnectionString}");
-
-        _migrationContainer = new ContainerBuilder()
-            .WithImage(MIGRATION_IMAGE_NAME)
-            .WithEnvironment("ConnectionStrings:Products", dbConnectionString)
-            .DependsOn(_postgres)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Migration completed successfully."))
-            .Build();
-
-        _grpcContainer = new ContainerBuilder()
-            .WithImage(GRPC_IMAGE_NAME)
-            .WithPortBinding(8080, true)
-            .WithExposedPort(8080)
-            .WithEnvironment("ConnectionStrings:Products", dbConnectionString)
-            .Build();
-
-        await _migrationContainer.StartAsync();
-        await _grpcContainer.StartAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _migrationContainer.StopAsync();
-        await _grpcContainer.StopAsync();
-        await _postgres.StopAsync();
+        _fixture = fixture;
     }
 
     [Fact]
     public async Task Create_ShouldCreateProduct()
     {
-        var grpcConnectionString = $"http://{_grpcContainer.Hostname}:{_grpcContainer.GetMappedPublicPort(8080)}";
-        var channel = GrpcChannel.ForAddress(grpcConnectionString);
-        var client = new GrpcProducts.GrpcProductsClient(channel);
+
+        var client = new GrpcProductsClient(_fixture.Channel);
 
         var request = new CreateProductRequest
         {
-            Product = new CreateProduct
-            {
-                Name = "Test Product",
-                CategoryKey = Guid.NewGuid().ToString(),
-                Description = "Test Product Description",
-                ImageUrl = "https://test.com/image.jpg",
-                Prices = { new List<ProductPrice> {
-                    new ProductPrice
-                    {
-                        CurrencyKey = Guid.NewGuid().ToString(),
-                        Value = 100.00f
-                    }
-                }}
-            }
+            Product = CreateProduct()
         };
 
         var response = await client.CreateProductAsync(request);
@@ -107,5 +29,50 @@ public class CreateIntegrationTests : IAsyncLifetime
         Assert.NotNull(response);
         Assert.NotNull(response.Product);
         Assert.NotNull(response.Product.Key);
+    }
+
+    [Fact]
+    public async Task Create_ShouldPersistProduct()
+    {
+        var client = new GrpcProductsClient(_fixture.Channel);
+
+        var request = new CreateProductRequest
+        {
+            Product = CreateProduct()
+        };
+
+        var response = await client.CreateProductAsync(request);
+        var product = await client.GetProductAsync(new GetProductRequest { Key = response.Product.Key });
+
+        Assert.NotNull(product);
+        Assert.NotNull(product.Product);
+        Assert.NotNull(product.Product.Key);
+        Assert.Equal(response.Product.Key, product.Product.Key);
+        Assert.Equal(request.Product.Name, product.Product.Name);
+        Assert.Equal(request.Product.CategoryKey, product.Product.CategoryKey);
+        Assert.Equal(request.Product.Description, product.Product.Description);
+        Assert.Equal(request.Product.ImageUrl, product.Product.ImageUrl);
+        Assert.Equal(request.Product.Prices.Count, product.Product.Prices.Count);
+        Assert.Equal(request.Product.Prices[0].CurrencyKey, product.Product.Prices[0].CurrencyKey);
+        Assert.Equal(request.Product.Prices[0].Value, product.Product.Prices[0].Value);
+    }
+
+
+    private CreateProduct CreateProduct()
+    {
+        return new CreateProduct
+        {
+            Name = "Test Product",
+            CategoryKey = Guid.NewGuid().ToString(),
+            Description = "Test Product Description",
+            ImageUrl = "https://test.com/image.jpg",
+            Prices = { new List<ProductPrice> {
+                    new ProductPrice
+                    {
+                        CurrencyKey = Guid.NewGuid().ToString(),
+                        Value = 100.00f
+                    }
+                }}
+        };
     }
 }

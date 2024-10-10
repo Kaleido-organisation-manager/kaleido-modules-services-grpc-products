@@ -13,17 +13,17 @@ public class GetRequestValidator : IRequestValidator<GetProductRequest>
         _productValidator = productValidator;
     }
 
-    public async Task<ValidationResult> ValidateAsync(GetProductRequest request, CancellationToken cancellationToken = default)
+    public Task<ValidationResult> ValidateAsync(GetProductRequest request, CancellationToken cancellationToken = default)
     {
         var validationResult = new ValidationResult();
 
-        var keyValidation = await _productValidator.ValidateKeyAsync(request.Key, cancellationToken);
+        var keyValidation = _productValidator.ValidateKeyFormat(request.Key);
 
         if (!keyValidation.IsValid)
         {
             validationResult.Merge(keyValidation);
         }
 
-        return validationResult;
+        return Task.FromResult(validationResult);
     }
 }

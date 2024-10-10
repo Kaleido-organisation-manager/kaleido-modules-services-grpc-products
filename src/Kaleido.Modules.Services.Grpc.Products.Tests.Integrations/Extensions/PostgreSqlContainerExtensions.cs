@@ -11,7 +11,7 @@ public static class PostgreSqlContainerExtensions
         return WaitForPort(container, PostgreSqlBuilder.PostgreSqlPort, maxWait ?? TimeSpan.FromSeconds(10));
     }
 
-    public static async Task<bool> WaitForPort(this DockerContainer container, int unmappedPort, TimeSpan maxWait)
+    public static async Task<bool> WaitForPort(this IContainer container, int unmappedPort, TimeSpan maxWait)
     {
         Console.WriteLine($"Waiting for port {unmappedPort} on {container.Hostname}");
         var ips = await Dns.GetHostAddressesAsync(container.Hostname);
