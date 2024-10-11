@@ -87,12 +87,6 @@ app.MapGet("/", () => "Communication with gRPC endpoints must be made through a 
 
 app.MapHealthChecks("/health");
 
-using (var scope = app.Services.CreateScope())
-{
-        var dbContext = scope.ServiceProvider.GetRequiredService<ProductsDbContext>();
-        dbContext.Database.Migrate();  // Applies any pending migrations
-}
-
 app.Run();
 
 public partial class Program { }
