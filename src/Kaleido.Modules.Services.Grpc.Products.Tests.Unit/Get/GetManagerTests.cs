@@ -34,11 +34,11 @@ public class GetManagerTests
         _expectedProduct = CreateSampleProduct(_validProductKey);
 
         _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetAsync(Guid.Parse(_validProductKey), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetActiveAsync(Guid.Parse(_validProductKey), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_expectedProductEntity);
 
         _mocker.GetMock<IProductPricesRepository>()
-            .Setup(x => x.GetAllByProductKeyAsync(_expectedProductEntity.Key, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAllActiveByProductKeyAsync(_expectedProductEntity.Key, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_expectedPriceEntities);
 
         _mocker.GetMock<IProductMapper>()
@@ -54,8 +54,8 @@ public class GetManagerTests
 
         // Assert
         Assert.Equal(_expectedProduct, result);
-        _mocker.GetMock<IProductsRepository>().Verify(x => x.GetAsync(Guid.Parse(_validProductKey), It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPricesRepository>().Verify(x => x.GetAllByProductKeyAsync(_expectedProductEntity.Key, It.IsAny<CancellationToken>()), Times.Once);
+        _mocker.GetMock<IProductsRepository>().Verify(x => x.GetActiveAsync(Guid.Parse(_validProductKey), It.IsAny<CancellationToken>()), Times.Once);
+        _mocker.GetMock<IProductPricesRepository>().Verify(x => x.GetAllActiveByProductKeyAsync(_expectedProductEntity.Key, It.IsAny<CancellationToken>()), Times.Once);
         _mocker.GetMock<IProductMapper>().Verify(x => x.FromEntities(_expectedProductEntity, _expectedPriceEntities), Times.Once);
     }
 
@@ -75,7 +75,7 @@ public class GetManagerTests
         // Arrange
         var nonExistentKey = Guid.NewGuid().ToString();
         _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetAsync(Guid.Parse(nonExistentKey), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetActiveAsync(Guid.Parse(nonExistentKey), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ProductEntity?)null);
 
         // Act

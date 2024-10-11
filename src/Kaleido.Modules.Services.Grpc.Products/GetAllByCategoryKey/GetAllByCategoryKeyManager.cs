@@ -37,7 +37,7 @@ public class GetAllByCategoryKeyManager : IGetAllByCategoryKeyManager
         foreach (var productEntity in productEntityList)
         {
             _logger.LogInformation("Retrieving prices for product with key: {Key}", productEntity.Key);
-            var productPrices = await _productPricesRepository.GetAllByProductKeyAsync(productEntity.Key!, cancellationToken);
+            var productPrices = await _productPricesRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
             productList.Add(_productMapper.FromEntities(productEntity, productPrices));
         }
 

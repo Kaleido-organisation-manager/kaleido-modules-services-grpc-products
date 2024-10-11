@@ -2,6 +2,7 @@ using Grpc.Core;
 using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
 using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Delete;
@@ -30,18 +31,28 @@ public class DeleteHandler : IBaseHandler<DeleteProductRequest, DeleteProductRes
         var validationResult = await Validator.ValidateAsync(request, cancellationToken);
         validationResult.ThrowIfInvalid();
 
+        ProductEntity? deletedEntity;
+
         try
         {
-            await _deleteProductManager.DeleteAsync(request.Key, cancellationToken);
-            return new DeleteProductResponse()
-            {
-                Key = request.Key
-            };
+            deletedEntity = await _deleteProductManager.DeleteAsync(request.Key, cancellationToken);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while deleting product with key: {Key}", request.Key);
             throw new RpcException(new Status(StatusCode.Internal, ex.Message));
         }
+
+        if (deletedEntity == null)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, $"Product with key: {request.Key} not found"));
+        }
+
+        return new DeleteProductResponse()
+        {
+            Key = request.Key
+        };
+
+
     }
 }

@@ -43,7 +43,7 @@ public class ProductValidator : IProductValidator
     {
         var validationResult = new ValidationResult();
 
-        var keyValidationResult = await ValidateKeyAsync(product.Key, cancellationToken);
+        var keyValidationResult = ValidateKeyFormat(product.Key);
         if (!keyValidationResult.IsValid)
         {
             validationResult.Merge(keyValidationResult);
@@ -68,7 +68,7 @@ public class ProductValidator : IProductValidator
             validationResult.Merge(commonKeyValidationResult);
         }
 
-        var existingProduct = await _productsRepository.GetAsync(guid, cancellationToken);
+        var existingProduct = await _productsRepository.GetActiveAsync(guid, cancellationToken);
         if (existingProduct == null)
         {
             validationResult.AddNotFoundError([nameof(Product), nameof(productKey)], "Product not found");
@@ -116,25 +116,6 @@ public class ProductValidator : IProductValidator
         if (!Guid.TryParse(productKey, out guid))
         {
             validationResult.AddInvalidFormatError([nameof(Product), nameof(productKey)], "Product Key is not a valid GUID");
-        }
-
-        return validationResult;
-    }
-
-    public async Task<ValidationResult> ValidateKeyForRevisionAsync(string productKey, CancellationToken cancellationToken = default)
-    {
-        var validationResult = new ValidationResult();
-
-        var commonKeyValidationResult = ValidateCommonRulesForProductKey(productKey, out var guid);
-        if (!commonKeyValidationResult.IsValid)
-        {
-            validationResult.Merge(commonKeyValidationResult);
-        }
-
-        var existingProducts = await _productsRepository.GetAllRevisionsAsync(guid, cancellationToken);
-        if (existingProducts.Count() == 0)
-        {
-            validationResult.AddNotFoundError([nameof(Product), nameof(productKey)], "Product not found");
         }
 
         return validationResult;

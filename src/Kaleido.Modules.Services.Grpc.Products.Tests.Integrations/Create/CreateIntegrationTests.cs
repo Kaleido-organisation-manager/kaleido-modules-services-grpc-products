@@ -1,4 +1,5 @@
 using Kaleido.Grpc.Products;
+using Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Builders;
 using Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures;
 using static Kaleido.Grpc.Products.GrpcProducts;
 
@@ -16,15 +17,12 @@ public class CreateIntegrationTests : IClassFixture<InfrastructureFixture>
     [Fact]
     public async Task Create_ShouldCreateProduct()
     {
-
-        var client = new GrpcProductsClient(_fixture.Channel);
-
         var request = new CreateProductRequest
         {
-            Product = CreateProduct()
+            Product = new CreateProductBuilder().Build()
         };
 
-        var response = await client.CreateProductAsync(request);
+        var response = await _fixture.Client.CreateProductAsync(request);
 
         Assert.NotNull(response);
         Assert.NotNull(response.Product);
@@ -34,15 +32,13 @@ public class CreateIntegrationTests : IClassFixture<InfrastructureFixture>
     [Fact]
     public async Task Create_ShouldPersistProduct()
     {
-        var client = new GrpcProductsClient(_fixture.Channel);
-
         var request = new CreateProductRequest
         {
-            Product = CreateProduct()
+            Product = new CreateProductBuilder().Build()
         };
 
-        var response = await client.CreateProductAsync(request);
-        var product = await client.GetProductAsync(new GetProductRequest { Key = response.Product.Key });
+        var response = await _fixture.Client.CreateProductAsync(request);
+        var product = await _fixture.Client.GetProductAsync(new GetProductRequest { Key = response.Product.Key });
 
         Assert.NotNull(product);
         Assert.NotNull(product.Product);
@@ -57,22 +53,4 @@ public class CreateIntegrationTests : IClassFixture<InfrastructureFixture>
         Assert.Equal(request.Product.Prices[0].Value, product.Product.Prices[0].Value);
     }
 
-
-    private CreateProduct CreateProduct()
-    {
-        return new CreateProduct
-        {
-            Name = "Test Product",
-            CategoryKey = Guid.NewGuid().ToString(),
-            Description = "Test Product Description",
-            ImageUrl = "https://test.com/image.jpg",
-            Prices = { new List<ProductPrice> {
-                    new ProductPrice
-                    {
-                        CurrencyKey = Guid.NewGuid().ToString(),
-                        Value = 100.00f
-                    }
-                }}
-        };
-    }
 }

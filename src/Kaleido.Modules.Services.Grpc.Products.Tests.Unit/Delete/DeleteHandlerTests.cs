@@ -1,6 +1,7 @@
 using Grpc.Core;
 using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models.Validations;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Delete;
@@ -22,11 +23,18 @@ public class DeleteProductHandlerTests
         _mocker = new AutoMocker();
         _mocker.Use<ILogger<DeleteHandler>>(NullLogger<DeleteHandler>.Instance);
 
-        _validRequest = new DeleteProductRequest { Key = "123" };
+        _validRequest = new DeleteProductRequest { Key = Guid.NewGuid().ToString() };
+
+        var deletedEntity = new ProductEntity()
+        {
+            Key = Guid.Parse(_validRequest.Key),
+            Name = "Test Product",
+            CategoryKey = Guid.NewGuid()
+        };
 
         _mocker.GetMock<IDeleteManager>()
             .Setup(m => m.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(deletedEntity);
 
         _mocker.GetMock<IRequestValidator<DeleteProductRequest>>()
             .Setup(v => v.ValidateAsync(It.IsAny<DeleteProductRequest>(), It.IsAny<CancellationToken>()))
@@ -43,7 +51,7 @@ public class DeleteProductHandlerTests
 
         // Assert
         Assert.NotNull(response);
-        Assert.Equal("123", response.Key);
+        Assert.Equal(_validRequest.Key, response.Key);
     }
 
     [Fact]
@@ -72,6 +80,18 @@ public class DeleteProductHandlerTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<RpcException>(() => _handler.HandleAsync(_validRequest));
         Assert.Equal(StatusCode.Internal, exception.StatusCode);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NotFound_ThrowsRpcExceptionWithNotFoundError()
+    {
+        _mocker.GetMock<IDeleteManager>()
+            .Setup(m => m.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductEntity?)null);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RpcException>(() => _handler.HandleAsync(_validRequest));
+        Assert.Equal(StatusCode.NotFound, exception.StatusCode);
     }
 }
 

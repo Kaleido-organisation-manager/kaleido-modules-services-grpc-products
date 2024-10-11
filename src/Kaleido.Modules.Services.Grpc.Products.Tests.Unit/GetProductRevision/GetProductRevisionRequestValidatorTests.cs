@@ -20,8 +20,8 @@ public class GetProductRevisionRequestValidatorTests
         _validRequest = new GetProductRevisionRequest { Key = "valid-key", Revision = 1 };
 
         _productValidatorMock
-            .Setup(x => x.ValidateKeyForRevisionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+            .Setup(x => x.ValidateKeyFormat(It.IsAny<string>()))
+            .Returns(new ValidationResult());
     }
 
     [Fact]
@@ -43,8 +43,8 @@ public class GetProductRevisionRequestValidatorTests
         var validationResult = new ValidationResult();
         validationResult.AddRequiredError(["Key"], "Key is required");
         _productValidatorMock
-            .Setup(x => x.ValidateKeyForRevisionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validationResult);
+            .Setup(x => x.ValidateKeyFormat(It.IsAny<string>()))
+            .Returns(validationResult);
 
         // Act
         var result = await _sut.ValidateAsync(invalidRequest);
@@ -61,6 +61,6 @@ public class GetProductRevisionRequestValidatorTests
         await _sut.ValidateAsync(_validRequest);
 
         // Assert
-        _productValidatorMock.Verify(x => x.ValidateKeyForRevisionAsync(_validRequest.Key, It.IsAny<CancellationToken>()), Times.Once);
+        _productValidatorMock.Verify(x => x.ValidateKeyFormat(_validRequest.Key), Times.Once);
     }
 }

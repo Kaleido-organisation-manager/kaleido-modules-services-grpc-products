@@ -27,8 +27,8 @@ public class GetProductPriceRevisionRequestValidatorTests
         };
 
         _productValidatorMock
-            .Setup(x => x.ValidateKeyForRevisionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+            .Setup(x => x.ValidateKeyFormat(It.IsAny<string>()))
+            .Returns(new ValidationResult());
 
         _productPriceValidatorMock
             .Setup(x => x.ValidateCurrencyKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -53,8 +53,8 @@ public class GetProductPriceRevisionRequestValidatorTests
         var invalidKeyValidationResult = new ValidationResult();
         invalidKeyValidationResult.AddRequiredError(["Key"], "Key is required");
         _productValidatorMock
-            .Setup(x => x.ValidateKeyForRevisionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(invalidKeyValidationResult);
+            .Setup(x => x.ValidateKeyFormat(It.IsAny<string>()))
+            .Returns(invalidKeyValidationResult);
 
         // Act
         var result = await _sut.ValidateAsync(_validRequest);
@@ -89,8 +89,8 @@ public class GetProductPriceRevisionRequestValidatorTests
         var invalidKeyValidationResult = new ValidationResult();
         invalidKeyValidationResult.AddRequiredError(["Key"], "Key is required");
         _productValidatorMock
-            .Setup(x => x.ValidateKeyForRevisionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(invalidKeyValidationResult);
+            .Setup(x => x.ValidateKeyFormat(It.IsAny<string>()))
+            .Returns(invalidKeyValidationResult);
 
         var invalidCurrencyKeyValidationResult = new ValidationResult();
         invalidCurrencyKeyValidationResult.AddRequiredError(["CurrencyKey"], "CurrencyKey is required");

@@ -3,10 +3,11 @@ using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using Grpc.Net.Client;
 using Testcontainers.PostgreSql;
+using static Kaleido.Grpc.Products.GrpcProducts;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 {
-    public class InfrastructureFixture : IAsyncLifetime
+    public class InfrastructureFixture : IDisposable
     {
         private const string MIGRATION_IMAGE_NAME = "kaleido-modules-services-grpc-products-migrations:latest";
         private const string GRPC_IMAGE_NAME = "kaleido-modules-services-grpc-products:latest";
@@ -18,8 +19,9 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
         private IFutureDockerImage _migrationImage;
         private IContainer _migrationContainer = null!;
         private PostgreSqlContainer _postgres { get; }
+        private GrpcChannel _channel { get; set; } = null!;
 
-        public GrpcChannel Channel { get; private set; } = null!;
+        public GrpcProductsClient Client { get; private set; } = null!;
         public IContainer GrpcContainer { get; private set; } = null!;
         public string ConnectionString { get; private set; } = null!;
 
@@ -45,6 +47,8 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .WithDockerfile("docker/Grpc.Products/Dockerfile")
                 .WithName(GRPC_IMAGE_NAME)
                 .Build();
+
+            InitializeAsync().Wait();
         }
 
         public async Task InitializeAsync()
@@ -58,7 +62,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             ConnectionString = $"Server=host.docker.internal;Port={_postgres.GetMappedPublicPort(5432)};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
 
             _migrationContainer = new ContainerBuilder()
-                .WithImage(MIGRATION_IMAGE_NAME)
+                .WithImage(_migrationImage.FullName)
                 .WithEnvironment("ConnectionStrings:Products", ConnectionString)
                 .DependsOn(_postgres)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Migration completed successfully."))
@@ -67,24 +71,33 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             await _migrationContainer.StartAsync();
 
             GrpcContainer = new ContainerBuilder()
-                .WithImage(GRPC_IMAGE_NAME)
+                .WithImage(_grpcImage.FullName)
                 .WithPortBinding(8080, true)
                 .WithExposedPort(8080)
+                .DependsOn(_migrationContainer)
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8080))
                 .WithEnvironment("ConnectionStrings:Products", ConnectionString)
                 .Build();
 
             await GrpcContainer.StartAsync();
 
             var grpcConnectionString = $"http://{GrpcContainer.Hostname}:{GrpcContainer.GetMappedPublicPort(8080)}";
-            Channel = GrpcChannel.ForAddress(grpcConnectionString);
+            _channel = GrpcChannel.ForAddress(grpcConnectionString);
+
+            Client = new GrpcProductsClient(_channel);
         }
 
         public async Task DisposeAsync()
         {
             await _migrationContainer.DisposeAsync();
             await _postgres.DisposeAsync();
+            _channel.Dispose();
             await GrpcContainer.DisposeAsync();
-            await Channel.ShutdownAsync();
+        }
+
+        public void Dispose()
+        {
+            DisposeAsync().Wait();
         }
     }
 }

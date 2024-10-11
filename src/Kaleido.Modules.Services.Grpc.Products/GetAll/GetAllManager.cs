@@ -27,14 +27,14 @@ public class GetAllManager : IGetAllManager
     public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GetAllProducts called");
-        var productEntityList = await _productsRepository.GetAllAsync(cancellationToken);
+        var productEntityList = await _productsRepository.GetAllActiveAsync(cancellationToken);
 
         var productList = new List<Product>();
 
         foreach (var productEntity in productEntityList)
         {
             _logger.LogInformation("Retrieving prices for product with key: {Key}", productEntity.Key);
-            var productPrices = await _productPricesRepository.GetAllByProductKeyAsync(productEntity.Key!, cancellationToken);
+            var productPrices = await _productPricesRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
             productList.Add(_productMapper.FromEntities(productEntity, productPrices));
         }
 

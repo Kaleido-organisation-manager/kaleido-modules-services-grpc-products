@@ -35,18 +35,25 @@ public class UpdateHandler : IBaseHandler<UpdateProductRequest, UpdateProductRes
         }
         validationResult.ThrowIfInvalid();
 
+        Product? updatedProduct = null;
         try
         {
-            var updatedProduct = await _updateProductManager.UpdateAsync(request.Product, cancellationToken);
-            return new UpdateProductResponse
-            {
-                Product = updatedProduct
-            };
+            updatedProduct = await _updateProductManager.UpdateAsync(request.Product, cancellationToken);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while updating product with key: {Key}", request.Key);
             throw new RpcException(new Status(StatusCode.Internal, ex.Message));
         }
+
+        if (updatedProduct == null)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, $"Product with key: {request.Key} not found"));
+        }
+
+        return new UpdateProductResponse
+        {
+            Product = updatedProduct
+        };
     }
 }

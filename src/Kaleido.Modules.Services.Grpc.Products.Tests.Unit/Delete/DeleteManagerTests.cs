@@ -1,7 +1,9 @@
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Delete;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.VisualBasic;
 using Moq;
 using Moq.AutoMock;
 
@@ -21,13 +23,30 @@ public class DeleteManagerTests
 
         _validProductKey = Guid.NewGuid().ToString();
 
+        var deletedEntity = new ProductEntity()
+        {
+            Key = Guid.Parse(_validProductKey),
+            Name = "Test Product",
+            CategoryKey = Guid.NewGuid()
+        };
+
+        var deletedProductPrices = new List<ProductPriceEntity>() {
+            new ProductPriceEntity()
+            {
+                Key = Guid.NewGuid(),
+                ProductKey = Guid.Parse(_validProductKey),
+                Price = 100,
+                CurrencyKey = Guid.NewGuid()
+            }
+        };
+
         _mocker.GetMock<IProductsRepository>()
             .Setup(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(deletedEntity);
 
         _mocker.GetMock<IProductPricesRepository>()
             .Setup(x => x.DeleteByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(deletedProductPrices);
     }
 
     [Fact]
@@ -83,5 +102,26 @@ public class DeleteManagerTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() => _sut.DeleteAsync(_validProductKey));
         Assert.Same(expectedException, exception);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ReturnsNull_WhenProductNotFound()
+    {
+        // Arrange
+        _mocker.GetMock<IProductsRepository>()
+            .Setup(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductEntity?)null);
+
+        // Act
+        var result = await _sut.DeleteAsync(_validProductKey);
+
+        // Assert
+        Assert.Null(result);
+        _mocker.GetMock<IProductPricesRepository>().Verify(
+            x => x.DeleteByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _mocker.GetMock<IProductsRepository>().Verify(
+            x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

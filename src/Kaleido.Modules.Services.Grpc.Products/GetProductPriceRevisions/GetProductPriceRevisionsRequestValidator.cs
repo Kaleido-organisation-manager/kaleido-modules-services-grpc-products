@@ -21,7 +21,7 @@ public class GetProductPriceRevisionsRequestValidator : IRequestValidator<GetPro
     {
         var validationResult = new ValidationResult();
 
-        var keyValidation = await _productValidator.ValidateKeyForRevisionAsync(request.Key, cancellationToken);
+        var keyValidation = _productValidator.ValidateKeyFormat(request.Key);
 
         if (!keyValidation.IsValid)
         {

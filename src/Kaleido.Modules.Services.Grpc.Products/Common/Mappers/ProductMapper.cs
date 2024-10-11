@@ -45,12 +45,17 @@ public class ProductMapper : IProductMapper
         };
     }
 
-    public ProductPriceEntity ToCreatePriceEntity(Guid productKey, ProductPrice productPrice, int revision = 1)
+    public ProductPriceEntity ToCreatePriceEntity(Guid productKey, ProductPrice productPrice, Guid? productPriceKey = null, int revision = 1)
     {
+        if (productPriceKey == null || productPriceKey == Guid.Empty)
+        {
+            productPriceKey = Guid.NewGuid();
+        }
+
         return new ProductPriceEntity
         {
             CreatedAt = DateTime.UtcNow,
-            Key = productKey,
+            Key = productPriceKey.Value,
             Revision = revision,
             Status = EntityStatus.Active,
             ProductKey = productKey,

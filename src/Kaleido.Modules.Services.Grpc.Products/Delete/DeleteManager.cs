@@ -1,3 +1,4 @@
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Delete;
@@ -19,12 +20,20 @@ public class DeleteManager : IDeleteManager
         _productsRepository = productsRepository;
     }
 
-    public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
+    public async Task<ProductEntity?> DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         var productKey = Guid.Parse(key);
         _logger.LogInformation("Deleting Product with key: {key}", productKey);
-        await _productsRepository.DeleteAsync(productKey, cancellationToken);
+        var deletedEntity = await _productsRepository.DeleteAsync(productKey, cancellationToken);
+
+        if (deletedEntity == null)
+        {
+            return null;
+        }
+
         await _productPricesRepository.DeleteByProductKeyAsync(productKey, cancellationToken);
         _logger.LogInformation("Product with key: {key} deleted", productKey);
+
+        return deletedEntity;
     }
 }

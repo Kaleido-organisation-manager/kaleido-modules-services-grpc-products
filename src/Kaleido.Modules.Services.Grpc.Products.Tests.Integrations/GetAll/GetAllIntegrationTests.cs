@@ -17,8 +17,6 @@ public class GetAllIntegrationTests : IClassFixture<InfrastructureFixture>
     [Fact]
     public async Task GetAll_ShouldReturnAllProducts()
     {
-        var client = new GrpcProductsClient(_fixture.Channel);
-
         List<CreateProduct> productToCreate = [
             new CreateProductBuilder().Build(),
             new CreateProductBuilder().Build(),
@@ -29,11 +27,11 @@ public class GetAllIntegrationTests : IClassFixture<InfrastructureFixture>
 
         foreach (var product in productToCreate)
         {
-            var createResponse = await client.CreateProductAsync(new CreateProductRequest { Product = product });
+            var createResponse = await _fixture.Client.CreateProductAsync(new CreateProductRequest { Product = product });
             createdProducts.Add(createResponse.Product);
         }
 
-        var response = await client.GetAllProductsAsync(new GetAllProductsRequest());
+        var response = await _fixture.Client.GetAllProductsAsync(new GetAllProductsRequest());
 
         Assert.NotNull(response);
         Assert.Equal(createdProducts.Count, response.Products.Count);

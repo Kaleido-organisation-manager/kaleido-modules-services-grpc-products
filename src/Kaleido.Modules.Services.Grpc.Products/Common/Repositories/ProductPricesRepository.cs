@@ -14,7 +14,7 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
     {
     }
 
-    public async Task<IEnumerable<ProductPriceEntity>> GetAllByProductKeyAsync(Guid productId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProductPriceEntity>> GetAllActiveByProductKeyAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Getting all product prices by product id: {ProductId}", productId);
 
@@ -24,6 +24,13 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
             .ToListAsync(cancellationToken);
 
         return productPrices;
+    }
+
+    public async Task<IEnumerable<ProductPriceEntity>> GetAllByProductKeyAsync(Guid productId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Getting all product prices by product id: {ProductId}", productId);
+
+        return await _dbContext.ProductPrices.Where(productPrice => productPrice.ProductKey == productId).ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<ProductPriceEntity>> CreateRangeAsync(IEnumerable<ProductPriceEntity> productPrices, CancellationToken cancellationToken = default)
@@ -36,18 +43,25 @@ public class ProductPricesRepository : BaseRepository<ProductPriceEntity, Produc
         return productPrices;
     }
 
-    public async Task DeleteByProductKeyAsync(Guid productKey, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProductPriceEntity>> DeleteByProductKeyAsync(Guid productKey, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Deleting product prices by product id: {ProductId}", productKey);
 
         // resolve product prices by product id
-        var productPrices = await GetAllByProductKeyAsync(productKey, cancellationToken);
+        var productPrices = await GetAllActiveByProductKeyAsync(productKey, cancellationToken);
 
+        var deletedProductPrices = new List<ProductPriceEntity>();
         // update all price states to deleted
         foreach (var productPrice in productPrices)
         {
-            await DeleteAsync(productPrice.Key!, cancellationToken);
+            var deletedProductPrice = await DeleteAsync(productPrice.Key!, cancellationToken);
+            if (deletedProductPrice != null)
+            {
+                deletedProductPrices.Add(deletedProductPrice);
+            }
         }
+
+        return deletedProductPrices;
     }
 
     public async Task<ProductPriceEntity?> GetRevisionAsync(Guid productKey, Guid currencyKey, int revision, CancellationToken cancellationToken = default)

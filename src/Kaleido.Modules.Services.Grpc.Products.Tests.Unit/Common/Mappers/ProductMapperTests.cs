@@ -87,13 +87,53 @@ public class ProductMapperTests
         var result = _mapper.ToCreatePriceEntity(productKey, productPrice);
 
         // Assert
-        Assert.Equal(productKey, result.Key);
+        Assert.NotNull(result);
         Assert.Equal(productKey, result.ProductKey);
         Assert.Equal(productPrice.Value, result.Price);
         Assert.Equal(Guid.Parse(productPrice.CurrencyKey), result.CurrencyKey);
         Assert.Equal(EntityStatus.Active, result.Status);
         Assert.Equal(1, result.Revision);
         Assert.True((DateTime.UtcNow - result.CreatedAt).TotalSeconds < 1);
+    }
+
+    [Fact]
+    public void ToCreatePriceEntity_WithProductPriceKey_ShouldMapAllFields()
+    {
+        // Arrange
+        var productKey = Guid.NewGuid();
+        var productPrice = new ProductPrice
+        {
+            Value = 9.99f,
+            CurrencyKey = Guid.NewGuid().ToString()
+        };
+        var productPriceKey = Guid.NewGuid();
+
+        // Act
+        var result = _mapper.ToCreatePriceEntity(productKey, productPrice, productPriceKey);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(productPriceKey, result.Key);
+    }
+
+    [Fact]
+    public void ToCreatePriceEntity_WithRevision_ShouldMapAllFields()
+    {
+        // Arrange
+        var productKey = Guid.NewGuid();
+        var productPrice = new ProductPrice
+        {
+            Value = 9.99f,
+            CurrencyKey = Guid.NewGuid().ToString()
+        };
+        var revision = 2;
+
+        // Act
+        var result = _mapper.ToCreatePriceEntity(productKey, productPrice, revision: revision);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(revision, result.Revision);
     }
 
     [Fact]

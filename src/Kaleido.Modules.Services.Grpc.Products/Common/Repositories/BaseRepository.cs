@@ -21,7 +21,7 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
         _dbSet = dbSet;
     }
 
-    public async Task<T?> GetAsync(Guid key, CancellationToken cancellationToken = default)
+    public async Task<T?> GetActiveAsync(Guid key, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Get called with Id: {Id}", key);
         // Get item where id is key and state is active
@@ -29,12 +29,18 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
         return entity;
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<T>> GetAllActiveAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GetAll called");
         return await _dbSet
             .Where(p => p.Status == EntityStatus.Active)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GetAll called");
+        return await _dbSet.ToListAsync(cancellationToken);
     }
 
     public async Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default)
@@ -65,7 +71,7 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
 
     public async Task<T?> UpdateStatusAsync(Guid key, EntityStatus status, CancellationToken cancellationToken = default)
     {
-        var entity = await GetAsync(key, cancellationToken);
+        var entity = await GetActiveAsync(key, cancellationToken);
         if (entity == null)
         {
             return null;
@@ -78,9 +84,9 @@ public abstract class BaseRepository<T, U> : IBaseRepository<T>
         return stored.Entity;
     }
 
-    public async Task DeleteAsync(Guid key, CancellationToken cancellationToken = default)
+    public async Task<T?> DeleteAsync(Guid key, CancellationToken cancellationToken = default)
     {
-        await UpdateStatusAsync(key, EntityStatus.Deleted, cancellationToken);
+        return await UpdateStatusAsync(key, EntityStatus.Deleted, cancellationToken);
     }
 
     public async Task<IEnumerable<T>> GetAllRevisionsAsync(Guid key, CancellationToken cancellationToken = default)

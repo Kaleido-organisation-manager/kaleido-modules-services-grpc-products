@@ -29,14 +29,14 @@ public class GetManager : IGetManager
     {
         _logger.LogInformation("GetProduct called with key: {Key}", key);
         var productKey = Guid.Parse(key);
-        var productEntity = await _productsRepository.GetAsync(productKey, cancellationToken);
+        var productEntity = await _productsRepository.GetActiveAsync(productKey, cancellationToken);
 
         if (productEntity == null)
         {
             return null;
         }
 
-        var productPrices = await _productPricesRepository.GetAllByProductKeyAsync(productEntity.Key!, cancellationToken);
+        var productPrices = await _productPricesRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
 
         return _productMapper.FromEntities(productEntity, productPrices);
     }

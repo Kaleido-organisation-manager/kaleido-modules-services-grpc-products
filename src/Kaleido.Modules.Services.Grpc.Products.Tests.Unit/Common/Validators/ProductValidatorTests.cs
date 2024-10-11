@@ -123,7 +123,7 @@ public class ProductValidatorTests
         };
 
         _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProductEntity() { Name = "Valid Product", CategoryKey = Guid.NewGuid() });
 
         // Act
@@ -160,7 +160,7 @@ public class ProductValidatorTests
         var productKey = Guid.NewGuid().ToString();
 
         _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProductEntity() { Name = "Valid Product", CategoryKey = Guid.NewGuid() });
 
         // Act
@@ -206,7 +206,7 @@ public class ProductValidatorTests
         var productKey = Guid.NewGuid().ToString();
 
         _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ProductEntity?)null);
 
         // Act
@@ -260,7 +260,7 @@ public class ProductValidatorTests
     }
 
     [Fact]
-    public async Task ValidateKeyForRevisionAsync_WithValidKey_ShouldReturnValidResult()
+    public void ValidateKeyForRevisionAsync_WithValidKey_ShouldReturnValidResult()
     {
         // Arrange
         var productKey = Guid.NewGuid();
@@ -270,28 +270,10 @@ public class ProductValidatorTests
             .ReturnsAsync(new List<ProductEntity> { new ProductEntity() { Key = productKey, Name = "Valid Product", CategoryKey = Guid.NewGuid() } });
 
         // Act
-        var result = await _sut.ValidateKeyForRevisionAsync(productKey.ToString());
+        var result = _sut.ValidateKeyFormat(productKey.ToString());
 
         // Assert
         Assert.True(result.IsValid);
         Assert.Empty(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateKeyForRevisionAsync_WithNonExistentProduct_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var productKey = Guid.NewGuid().ToString();
-
-        _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ProductEntity>());
-
-        // Act
-        var result = await _sut.ValidateKeyForRevisionAsync(productKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
     }
 }

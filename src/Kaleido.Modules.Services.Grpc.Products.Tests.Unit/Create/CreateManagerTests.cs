@@ -37,7 +37,7 @@ public class CreateManagerTests
             .ReturnsAsync(_expectedProductEntity);
 
         _mocker.GetMock<IProductMapper>()
-            .Setup(x => x.ToCreatePriceEntity(It.IsAny<Guid>(), It.IsAny<ProductPrice>(), It.IsAny<int>()))
+            .Setup(x => x.ToCreatePriceEntity(It.IsAny<Guid>(), It.IsAny<ProductPrice>(), It.IsAny<Guid?>(), It.IsAny<int>()))
             .Returns(_expectedPriceEntities.First());
 
         _mocker.GetMock<IProductPricesRepository>()

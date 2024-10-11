@@ -37,6 +37,10 @@ public class UpdateRequestValidatorTests
             .ReturnsAsync(new ValidationResult());
 
         _productValidatorMock
+            .Setup(v => v.ValidateKeyFormat(It.IsAny<string>()))
+            .Returns(new ValidationResult());
+
+        _productValidatorMock
             .Setup(v => v.ValidateUpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
     }
@@ -59,8 +63,8 @@ public class UpdateRequestValidatorTests
         var invalidKeyValidationResult = new ValidationResult();
         invalidKeyValidationResult.AddRequiredError(["Key"], "Key is required");
         _productValidatorMock
-            .Setup(v => v.ValidateKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(invalidKeyValidationResult);
+            .Setup(v => v.ValidateKeyFormat(It.IsAny<string>()))
+            .Returns(invalidKeyValidationResult);
 
         // Act
         var result = await _validator.ValidateAsync(_validRequest);
@@ -109,7 +113,7 @@ public class UpdateRequestValidatorTests
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Equal(2, result.Errors.Count());
+        Assert.Single(result.Errors);
     }
 
     [Fact]
@@ -119,7 +123,7 @@ public class UpdateRequestValidatorTests
         await _validator.ValidateAsync(_validRequest);
 
         // Assert
-        _productValidatorMock.Verify(x => x.ValidateKeyAsync(_validRequest.Key, It.IsAny<CancellationToken>()), Times.Once);
+        _productValidatorMock.Verify(x => x.ValidateKeyFormat(_validRequest.Key), Times.Once);
     }
 
     [Fact]

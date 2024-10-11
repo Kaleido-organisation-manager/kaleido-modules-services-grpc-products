@@ -9,6 +9,5 @@ public interface IProductValidator
     Task<ValidationResult> ValidateUpdateAsync(Product product, CancellationToken cancellationToken = default);
     Task<ValidationResult> ValidateKeyAsync(string productKey, CancellationToken cancellationToken = default);
     Task<ValidationResult> ValidateCategoryKeyAsync(string categoryKey, CancellationToken cancellationToken = default);
-    Task<ValidationResult> ValidateKeyForRevisionAsync(string productKey, CancellationToken cancellationToken = default);
     ValidationResult ValidateKeyFormat(string productKey);
 }
