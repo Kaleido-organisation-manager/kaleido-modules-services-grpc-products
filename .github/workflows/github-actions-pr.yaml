@@ -28,6 +28,14 @@ jobs:
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
 
       # ================================================
+      # DOCKER BUILD
+      # ================================================
+      - name: 'Build docker service image'
+        run: docker build . -f docker/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ github.run_number }}
+      - name: 'Build docker migrations image'
+        run: docker build . -f docker/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ github.run_number }}
+
+      # ================================================
       # RUN TESTS
       # ================================================
       - name: 'Run unit tests'
@@ -42,12 +50,8 @@ jobs:
       - name: 'Run integration tests'
         run: dotnet test --logger "console;verbosity=detailed"
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
-
-      # ================================================
-      # DOCKER BUILD
-      # ================================================
-      - name: 'Build docker service image'
-        run: docker build . -f docker/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ github.run_number }}
-      - name: 'Build docker migrations image'
-        run: docker build . -f docker/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ github.run_number }}
+        env:
+          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ github.run_number }}
+          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ github.run_number }}
+          CI: true
 
