@@ -22,7 +22,8 @@ jobs:
         with:
           versionSpec: '6.x'
 
-      - name: Semver
+      - name: Execute GitVersion
+        id: Semver
         uses: gittools/actions/gitversion/execute@v3.0.0
 
       # ================================================
@@ -45,9 +46,9 @@ jobs:
       # DOCKER BUILD
       # ================================================
       - name: 'Build docker service image'
-        run: docker build . -f dockerfiles/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.SemVer }}
+        run: docker build . -f dockerfiles/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.MajorMinorPatch }}
       - name: 'Build docker migrations image'
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.SemVer }}
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.MajorMinorPatch }}
 
       # ================================================
       # RUN TESTS
@@ -65,7 +66,7 @@ jobs:
         run: dotnet test --logger "console;verbosity=detailed"
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
         env:
-          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.SemVer }}
-          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.SemVer }}
+          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.MajorMinorPatch }}
+          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.MajorMinorPatch }}
           CI: true
 
