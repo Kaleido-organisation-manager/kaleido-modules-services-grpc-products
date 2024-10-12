@@ -28,7 +28,6 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
         public InfrastructureFixture()
         {
             _postgres = new PostgreSqlBuilder()
-                .WithImage("postgres:15-alpine")
                 .WithDatabase(DB_NAME)
                 .WithUsername(DB_USER)
                 .WithPassword(DB_PASSWORD)
