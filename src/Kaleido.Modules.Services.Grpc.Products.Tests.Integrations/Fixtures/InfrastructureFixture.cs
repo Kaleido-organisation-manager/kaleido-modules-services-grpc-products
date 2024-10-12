@@ -92,7 +92,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             ConnectionString = $"Server={host};Port={_postgres.GetMappedPublicPort(5432)};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
 
             _migrationContainer = new ContainerBuilder()
-                .WithImage(_migrationImage.FullName)
+                .WithImage(_migrationImageName)
                 .WithEnvironment("ConnectionStrings:Products", ConnectionString)
                 .DependsOn(_postgres)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Migration completed successfully."))
@@ -103,7 +103,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             await _migrationContainer.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
 
             GrpcContainer = new ContainerBuilder()
-                .WithImage(_grpcImage.FullName)
+                .WithImage(_grpcImageName)
                 .WithPortBinding(8080, true)
                 .WithExposedPort(8080)
                 .DependsOn(_migrationContainer)
