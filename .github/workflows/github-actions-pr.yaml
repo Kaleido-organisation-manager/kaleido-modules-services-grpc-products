@@ -46,7 +46,7 @@ jobs:
       # DOCKER BUILD
       # ================================================
       - name: 'Build docker service image'
-        run: docker build . -f dockerfiles/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.MajorMinorPatch }}
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.MajorMinorPatch }}
       - name: 'Build docker migrations image'
         run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.MajorMinorPatch }}
 
