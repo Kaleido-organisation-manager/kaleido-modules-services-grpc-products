@@ -88,7 +88,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             }
 
 
-            string host = _isLocalDevelopment ? "host.docker.internal" : _postgres.Hostname;
+            string host = "host.docker.internal";
             ConnectionString = $"Server={host};Port={_postgres.GetMappedPublicPort(5432)};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
 
             _migrationContainer = new ContainerBuilder()
