@@ -38,7 +38,7 @@ jobs:
       # RUN INTEGRATION TESTS
       # ================================================
       - name: 'Check Docker'
-          run: docker info
+        run: docker info
       - name: 'Run integration tests'
         run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
