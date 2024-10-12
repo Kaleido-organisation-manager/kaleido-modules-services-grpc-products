@@ -5,35 +5,58 @@ on:
   pull_request:
     branches: [ "develop" ]
 
-env:
-  BASE_NAMESPACE: 'Kaleido.Modules.Services.Grpc.Products'
-
 jobs:
-  build:
+  # ================================================
+  # CHECKOUT
+  # ================================================
+  checkout:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # ================================================
-      # BUILD AND RESTORE DEPENDENCIES
-      # ================================================
+
+  # ================================================
+  # BUILD AND RESTORE DEPENDENCIES
+  # ================================================
+  build:
+    runs-on: ubuntu-latest
+    steps:
       - name: 'Restore dependencies'
         run: dotnet restore
         working-directory: ./src
       - name: 'Build service project'
         run: dotnet build
-        working-directory: ./src/$BASE_NAMESPACE
+        working-directory: ./src/Kaleido.Modules.Services.Grpc.Products
       - name: 'Build migrations project'
         run: dotnet build
-        working-directory: ./src/$BASE_NAMESPACE.Migrations
+        working-directory: ./src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: 'Build client project'
         run: dotnet build
-        working-directory: ./src/$BASE_NAMESPACE.Client
-      # ================================================
-      # RUN TESTS
-      # ================================================
+        working-directory: ./src/Kaleido.Modules.Services.Grpc.Products.Client
+  # ================================================
+  # RUN TESTS
+  # ================================================
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
       - name: 'Run unit tests'
         run: dotnet test
-        working-directory: ./src/$BASE_NAMESPACE.Tests.Unit
+        working-directory: ./src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
+  # ================================================
+  # RUN INTEGRATION TESTS
+  # ================================================
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
       - name: 'Run integration tests'
         run: dotnet test
-        working-directory: ./src/$BASE_NAMESPACE.Tests.Integrations
+        working-directory: ./src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
+  # ================================================
+  # DOCKER BUILD
+  # ================================================
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Build docker service image'
+        run: docker build . -f ./docker/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ github.run_number }}
+      - name: 'Build docker migrations image'
+        run: docker build . -f ./docker/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ github.run_number }}
