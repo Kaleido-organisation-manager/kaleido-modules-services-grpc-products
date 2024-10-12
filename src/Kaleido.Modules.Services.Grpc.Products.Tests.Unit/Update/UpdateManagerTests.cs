@@ -66,19 +66,15 @@ public class UpdateManagerTests
         };
 
         _sut = _mocker.CreateInstance<UpdateManager>();
-    }
 
-    [Fact]
-    public async Task UpdateAsync_ValidProduct_ReturnsUpdatedProduct()
-    {
-        // Arrange
+        // Happy path setup
         _mocker.GetMock<IProductsRepository>()
             .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_storedProductEntity);
 
         _mocker.GetMock<IProductsRepository>()
             .Setup(x => x.UpdateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductEntity);
+            .ReturnsAsync((ProductEntity entity, CancellationToken _) => entity);
 
         _mocker.GetMock<IProductPricesRepository>()
             .Setup(x => x.GetAllByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -86,8 +82,12 @@ public class UpdateManagerTests
 
         _mocker.GetMock<IProductPricesRepository>()
             .Setup(x => x.UpdateAsync(It.IsAny<ProductPriceEntity>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductPrices[0]);
+            .ReturnsAsync((ProductPriceEntity entity, CancellationToken _) => entity);
+    }
 
+    [Fact]
+    public async Task UpdateAsync_ValidProduct_ReturnsUpdatedProduct()
+    {
         // Act
         var result = await _sut.UpdateAsync(_validProduct);
 
@@ -121,14 +121,20 @@ public class UpdateManagerTests
     [Fact]
     public async Task UpdateAsync_ProductUnchanged_DoesNotUpdateProduct()
     {
-        // Arrange
+        // Setup
         _mocker.GetMock<IProductsRepository>()
             .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductEntity);
-
-        _mocker.GetMock<IProductPricesRepository>()
-            .Setup(x => x.GetAllByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductPrices);
+            .ReturnsAsync(new ProductEntity()
+            {
+                Key = _storedProductEntity.Key,
+                Name = _validProduct.Name,
+                Description = _validProduct.Description,
+                CategoryKey = Guid.Parse(_validProduct.CategoryKey),
+                ImageUrl = _validProduct.ImageUrl,
+                Revision = _storedProductEntity.Revision,
+                CreatedAt = _storedProductEntity.CreatedAt,
+                Status = _storedProductEntity.Status
+            });
 
         // Act
         await _sut.UpdateAsync(_validProduct);
@@ -145,19 +151,6 @@ public class UpdateManagerTests
         var newPrice = new ProductPrice { CurrencyKey = Guid.NewGuid().ToString(), Value = 29.99f };
         var productWithNewPrice = _validProduct.Clone();
         productWithNewPrice.Prices.Add(newPrice);
-
-        _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductEntity);
-
-        _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.UpdateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductEntity);
-
-        _mocker.GetMock<IProductPricesRepository>()
-            .Setup(x => x.GetAllByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductPrices);
-
 
         _mocker.GetMock<IProductPricesRepository>()
             .Setup(x => x.CreateAsync(It.IsAny<ProductPriceEntity>(), It.IsAny<CancellationToken>()))
@@ -186,14 +179,6 @@ public class UpdateManagerTests
         // Arrange
         var productWithoutPrice = _validProduct.Clone();
         productWithoutPrice.Prices.Clear();
-
-        _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductEntity);
-
-        _mocker.GetMock<IProductPricesRepository>()
-            .Setup(x => x.GetAllByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductPrices);
 
         // Act
         await _sut.UpdateAsync(productWithoutPrice);
@@ -237,14 +222,6 @@ public class UpdateManagerTests
             CreatedAt = DateTime.UtcNow,
             Status = EntityStatus.Active
         };
-
-        _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.GetActiveAsync(productKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_storedProductEntity);
-
-        _mocker.GetMock<IProductsRepository>()
-            .Setup(x => x.UpdateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ProductEntity entity, CancellationToken _) => entity);
 
         _mocker.GetMock<IProductPricesRepository>()
             .Setup(x => x.GetAllByProductKeyAsync(productKey, It.IsAny<CancellationToken>()))
