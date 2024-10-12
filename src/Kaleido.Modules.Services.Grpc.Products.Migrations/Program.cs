@@ -25,16 +25,10 @@ var host = builder.Build();
 using (var scope = host.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ProductsDbContext>();
 
-        await context.Database.MigrateAsync();
+    var context = services.GetRequiredService<ProductsDbContext>();
 
-        Console.WriteLine("Migration completed successfully.");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
-    }
+    await context.Database.MigrateAsync();
+
+    Console.WriteLine("Migration completed successfully.");
 }
