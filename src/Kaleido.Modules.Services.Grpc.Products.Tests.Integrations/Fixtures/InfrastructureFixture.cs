@@ -38,13 +38,13 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 
             _migrationImage = new ImageFromDockerfileBuilder()
                 .WithDockerfileDirectory(Path.Join(CommonDirectoryPath.GetSolutionDirectory().DirectoryPath, "../"))
-                .WithDockerfile("docker/Grpc.Products.Migrations/Dockerfile")
+                .WithDockerfile("dockerfiles/Grpc.Products.Migrations/Dockerfile")
                 .WithName(MIGRATION_IMAGE_NAME)
                 .Build();
 
             _grpcImage = new ImageFromDockerfileBuilder()
                 .WithDockerfileDirectory(Path.Join(CommonDirectoryPath.GetSolutionDirectory().DirectoryPath, "../"))
-                .WithDockerfile("docker/Grpc.Products/Dockerfile")
+                .WithDockerfile("dockerfiles/Grpc.Products/Dockerfile")
                 .WithName(GRPC_IMAGE_NAME)
                 .Build();
 
