@@ -1,0 +1,35 @@
+name: CI Pipeline on Pull Request
+'on': pull_request 
+
+variables:
+  BASE_NAMESPACE: 'Kaleido.Modules.Services.Grpc.Products'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # ================================================
+      # BUILD AND RESTORE DEPENDENCIES
+      # ================================================
+      - name: 'Restore dependencies'
+        run: dotnet restore
+        working-directory: ./src
+      - name: 'Build service project'
+        run: dotnet build
+        working-directory: ./src/${{ vars.BASE_NAMESPACE }}
+      - name: 'Build migrations project'
+        run: dotnet build
+        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Migrations
+      - name: 'Build client project'
+        run: dotnet build
+        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Client
+      # ================================================
+      # RUN TESTS
+      # ================================================
+      - name: 'Run unit tests'
+        run: dotnet test
+        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Tests.Unit
+      - name: 'Run integration tests'
+        run: dotnet test
+        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Tests.Integrations
