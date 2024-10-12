@@ -13,7 +13,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 {
     public class InfrastructureFixture : IDisposable
     {
-        private const int TIMEOUT_WAIT_MINUTES = 2;
+        private const int TIMEOUT_WAIT_MINUTES = 1;
         private const string NETWORK_NAME = "kaleido-modules-services-grpc-products-integration-tests";
         private const string DB_NAME = "products";
         private const string DB_USER = "postgres";
@@ -52,6 +52,8 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .WithUsername(DB_USER)
                 .WithPassword(DB_PASSWORD)
                 .WithLogger(new LoggerFactory().CreateLogger<PostgreSqlContainer>())
+                .WithHostname("postgres")
+                .WithNetworkAliases("postgres")
                 .Build();
 
             if (_isLocalDevelopment)
@@ -94,6 +96,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 
             string host = "host.docker.internal";
             ConnectionString = $"Server={host};Port={_postgres.GetMappedPublicPort(5432)};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
+            Console.WriteLine(ConnectionString);
 
             _migrationContainer = new ContainerBuilder()
                 .WithImage(_migrationImageName)
