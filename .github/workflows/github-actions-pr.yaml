@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [ "develop" ]
 
-variables:
+env:
   BASE_NAMESPACE: 'Kaleido.Modules.Services.Grpc.Products'
 
 jobs:
@@ -21,19 +21,19 @@ jobs:
         working-directory: ./src
       - name: 'Build service project'
         run: dotnet build
-        working-directory: ./src/${{ vars.BASE_NAMESPACE }}
+        working-directory: ./src/$BASE_NAMESPACE
       - name: 'Build migrations project'
         run: dotnet build
-        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Migrations
+        working-directory: ./src/$BASE_NAMESPACE.Migrations
       - name: 'Build client project'
         run: dotnet build
-        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Client
+        working-directory: ./src/$BASE_NAMESPACE.Client
       # ================================================
       # RUN TESTS
       # ================================================
       - name: 'Run unit tests'
         run: dotnet test
-        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Tests.Unit
+        working-directory: ./src/$BASE_NAMESPACE.Tests.Unit
       - name: 'Run integration tests'
         run: dotnet test
-        working-directory: ./src/${{ vars.BASE_NAMESPACE }}.Tests.Integrations
+        working-directory: ./src/$BASE_NAMESPACE.Tests.Integrations
