@@ -1,9 +1,11 @@
+using DotNet.Testcontainers;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using DotNet.Testcontainers.Networks;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Testcontainers.PostgreSql;
 using static Kaleido.Grpc.Products.GrpcProducts;
 
@@ -20,12 +22,16 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
         private string _migrationImageName = "kaleido-modules-services-grpc-products-migrations:latest";
         private string _grpcImageName = "kaleido-modules-services-grpc-products:latest";
         private readonly bool _isLocalDevelopment;
-        private IFutureDockerImage _grpcImage = null!;
-        private IFutureDockerImage _migrationImage = null!;
+        private IFutureDockerImage? _grpcImage;
+        private IFutureDockerImage? _migrationImage;
         private IContainer _migrationContainer = null!;
         private PostgreSqlContainer _postgres { get; }
         private GrpcChannel _channel { get; set; } = null!;
-        private INetwork _network { get; set; } = null!;
+        private ILoggerFactory _loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Debug)
+                   .AddConsole();
+        });
 
         public GrpcProductsClient Client { get; private set; } = null!;
         public IContainer GrpcContainer { get; private set; } = null!;
@@ -41,17 +47,11 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 _migrationImageName = Environment.GetEnvironmentVariable("MIGRATIONS_IMAGE_NAME") ?? _migrationImageName;
             }
 
-            _network = new NetworkBuilder()
-                .WithName(NETWORK_NAME)
-                .WithLogger(new LoggerFactory().CreateLogger<NetworkBuilder>())
-                .Build();
-
             _postgres = new PostgreSqlBuilder()
                 .WithDatabase(DB_NAME)
                 .WithUsername(DB_USER)
                 .WithPassword(DB_PASSWORD)
                 .WithLogger(new LoggerFactory().CreateLogger<PostgreSqlContainer>())
-                .WithNetwork(_network)
                 .Build();
 
             if (_isLocalDevelopment)
@@ -81,9 +81,13 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             await _postgres.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
             await _postgres.WaitForPort().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
 
-            if (_isLocalDevelopment)
+            if (_migrationImage != null)
             {
                 await _migrationImage.CreateAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
+            }
+
+            if (_grpcImage != null)
+            {
                 await _grpcImage.CreateAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
             }
 
@@ -97,7 +101,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .DependsOn(_postgres)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Migration completed successfully."))
                 .WithLogger(new LoggerFactory().CreateLogger<IContainer>())
-                .WithNetwork(_network)
+                .WithOutputConsumer(Consume.RedirectStdoutAndStderrToConsole())
                 .Build();
 
             await _migrationContainer.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
@@ -110,7 +114,6 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8080))
                 .WithEnvironment("ConnectionStrings:Products", ConnectionString)
                 .WithLogger(new LoggerFactory().CreateLogger<IContainer>())
-                .WithNetwork(_network)
                 .Build();
 
             await GrpcContainer.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
@@ -127,7 +130,6 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             await _postgres.DisposeAsync();
             _channel.Dispose();
             await GrpcContainer.DisposeAsync();
-            await _network.DisposeAsync();
         }
 
         public void Dispose()
