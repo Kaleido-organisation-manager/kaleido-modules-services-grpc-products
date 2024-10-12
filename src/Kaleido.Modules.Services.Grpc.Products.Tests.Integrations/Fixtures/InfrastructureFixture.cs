@@ -9,6 +9,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 {
     public class InfrastructureFixture : IDisposable
     {
+        private const int TIMEOUT_WAIT_MINUTES = 2;
         private const string MIGRATION_IMAGE_NAME = "kaleido-modules-services-grpc-products-migrations:latest";
         private const string GRPC_IMAGE_NAME = "kaleido-modules-services-grpc-products:latest";
         private const string DB_NAME = "products";
@@ -52,11 +53,11 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 
         public async Task InitializeAsync()
         {
-            await _postgres.StartAsync();
-            await _postgres.WaitForPort();
+            await _postgres.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
+            await _postgres.WaitForPort().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
 
-            await _migrationImage.CreateAsync();
-            await _grpcImage.CreateAsync();
+            await _migrationImage.CreateAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
+            await _grpcImage.CreateAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
 
             ConnectionString = $"Server=host.docker.internal;Port={_postgres.GetMappedPublicPort(5432)};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
 
@@ -67,7 +68,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Migration completed successfully."))
                 .Build();
 
-            await _migrationContainer.StartAsync();
+            await _migrationContainer.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
 
             GrpcContainer = new ContainerBuilder()
                 .WithImage(_grpcImage.FullName)
@@ -78,7 +79,7 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .WithEnvironment("ConnectionStrings:Products", ConnectionString)
                 .Build();
 
-            await GrpcContainer.StartAsync();
+            await GrpcContainer.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
 
             var grpcConnectionString = $"http://{GrpcContainer.Hostname}:{GrpcContainer.GetMappedPublicPort(8080)}";
             _channel = GrpcChannel.ForAddress(grpcConnectionString);
