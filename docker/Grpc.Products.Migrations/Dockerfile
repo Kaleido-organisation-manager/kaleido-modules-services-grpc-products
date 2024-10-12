@@ -14,12 +14,6 @@ RUN dotnet restore Kaleido.Modules.Services.Grpc.Products.Migrations
 RUN dotnet restore Kaleido.Modules.Services.Grpc.Products
 
 RUN dotnet build Kaleido.Modules.Services.Grpc.Products.Migrations
-RUN dotnet tool install --global dotnet-ef
-RUN ls -la
-RUN ls /root/.dotnet/tools
-
-ENV PATH="${PATH}:/root/.dotnet/tools"
-RUN dotnet ef migrations add Products --project Kaleido.Modules.Services.Grpc.Products.Migrations
 
 RUN dotnet publish Kaleido.Modules.Services.Grpc.Products.Migrations -c Release -o out
 

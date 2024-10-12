@@ -1,7 +1,4 @@
-using System.Drawing;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
-using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models.Validations;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
