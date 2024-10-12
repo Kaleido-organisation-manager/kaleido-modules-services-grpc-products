@@ -9,7 +9,21 @@ jobs:
       # ================================================
       # CHECKOUT
       # ================================================
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+      fetch-depth: 0
+
+      # ================================================
+      # GITVERSION
+      # ================================================
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.0.0
+        with:
+          versionSpec: '6.x'
+
+      - name: Semver
+        uses: gittools/actions/gitversion/execute@v3.0.0
 
       # ================================================
       # BUILD AND RESTORE DEPENDENCIES
@@ -31,9 +45,9 @@ jobs:
       # DOCKER BUILD
       # ================================================
       - name: 'Build docker service image'
-        run: docker build . -f docker/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ github.run_number }}
+        run: docker build . -f dockerfiles/Grpc.Products.Service/Dockerfile -t kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.SemVer }}
       - name: 'Build docker migrations image'
-        run: docker build . -f docker/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ github.run_number }}
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.SemVer }}
 
       # ================================================
       # RUN TESTS
@@ -51,7 +65,7 @@ jobs:
         run: dotnet test --logger "console;verbosity=detailed"
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
         env:
-          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ github.run_number }}
-          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ github.run_number }}
+          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.SemVer }}
+          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.SemVer }}
           CI: true
 
