@@ -40,7 +40,7 @@ jobs:
       - name: 'Check Docker'
         run: docker info
       - name: 'Run integration tests'
-        run: dotnet test
+        run: dotnet test --logger "console;verbosity=detailed"
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
 
       # ================================================
