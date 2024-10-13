@@ -75,7 +75,7 @@ jobs:
 
   integration-tests:
     name: Run Integration Tests
-    needs: [unit-tests]
+    needs: [unit-tests, gitversion]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,13 +84,13 @@ jobs:
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t kaleido-modules-services-grpc-products:${{ jobs.gitversion.outputs.version }}
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ jobs.gitversion.outputs.version }}
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
       - name: Run integration tests
         run: dotnet test --logger "console;verbosity=detailed"
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
         env:
-          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ jobs.gitversion.outputs.version }}
-          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ jobs.gitversion.outputs.version }}
+          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
+          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
           CI: true
