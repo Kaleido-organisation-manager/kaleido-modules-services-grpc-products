@@ -1,5 +1,6 @@
 using DotNet.Testcontainers;
 using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using DotNet.Testcontainers.Networks;
@@ -27,7 +28,6 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
         private IContainer _migrationContainer = null!;
         private PostgreSqlContainer _postgres { get; }
         private GrpcChannel _channel { get; set; } = null!;
-        private INetwork _network = null!;
 
         public GrpcProductsClient Client { get; private set; } = null!;
         public IContainer GrpcContainer { get; private set; } = null!;
@@ -43,11 +43,6 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 _migrationImageName = Environment.GetEnvironmentVariable("MIGRATIONS_IMAGE_NAME") ?? _migrationImageName;
             }
 
-            _network = new NetworkBuilder()
-                .WithName(NETWORK_NAME)
-                .WithDockerEndpoint(Environment.GetEnvironmentVariable("DOCKER_HOST") ?? "unix:///var/run/docker.sock")
-                .Build();
-
             _postgres = new PostgreSqlBuilder()
                 .WithDatabase(DB_NAME)
                 .WithUsername(DB_USER)
@@ -55,7 +50,6 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .WithLogger(new LoggerFactory().CreateLogger<PostgreSqlContainer>())
                 .WithPortBinding(5432, true)
                 .WithExposedPort(5432)
-                .WithNetwork(_network)
                 .WithNetworkAliases("postgres")
                 .WithHostname("postgres")
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
@@ -101,9 +95,11 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
             }
 
 
-            string host = "host.docker.internal";
-            ConnectionString = $"Server={host};Port={_postgres.GetMappedPublicPort(5432)};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
-            Console.WriteLine(ConnectionString);
+            string host = "host.testcontainers.internal";
+            var postgresPort = _postgres.GetMappedPublicPort(5432);
+            ConnectionString = $"Server={host};Port={postgresPort};Database={DB_NAME};Username={DB_USER};Password={DB_PASSWORD}";
+            await TestcontainersSettings.ExposeHostPortsAsync(postgresPort)
+                .ConfigureAwait(false);
 
             _migrationContainer = new ContainerBuilder()
                 .WithImage(_migrationImageName)
@@ -111,8 +107,6 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .DependsOn(_postgres)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Migration completed successfully."))
                 .WithLogger(new LoggerFactory().CreateLogger<IContainer>())
-                .WithOutputConsumer(Consume.RedirectStdoutAndStderrToConsole())
-                .WithNetwork(_network)
                 .Build();
 
             await _migrationContainer.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
@@ -125,15 +119,16 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8080))
                 .WithEnvironment("ConnectionStrings:Products", ConnectionString)
                 .WithLogger(new LoggerFactory().CreateLogger<IContainer>())
-                .WithNetwork(_network)
                 .Build();
 
             await GrpcContainer.StartAsync().WaitAsync(TimeSpan.FromMinutes(TIMEOUT_WAIT_MINUTES));
 
-            var grpcUri = new UriBuilder("tcp", GrpcContainer.Hostname, GrpcContainer.GetMappedPublicPort(8080));
+
+            var grpcPort = GrpcContainer.GetMappedPublicPort(8080);
+            await TestcontainersSettings.ExposeHostPortsAsync(grpcPort)
+                .ConfigureAwait(false);
+            var grpcUri = new UriBuilder("http", GrpcContainer.Hostname, grpcPort);
             _channel = GrpcChannel.ForAddress(grpcUri.Uri);
-            // var grpcConnectionString = $"http://{GrpcContainer.Hostname}:{GrpcContainer.GetMappedPublicPort(8080)}";
-            // _channel = GrpcChannel.ForAddress(grpcConnectionString);
 
             Client = new GrpcProductsClient(_channel);
         }
