@@ -15,7 +15,7 @@ jobs:
       - id: Semver
         uses: gittools/actions/gitversion/execute@v3.0.0
       - name: Output GitVersion
-        run: echo "::set-output name=version::${{ steps.Semver.outputs.MajorMinorPatch }}"
+        run: echo "version=${{ steps.Semver.outputs.MajorMinorPatch }}" >> $GITHUB_OUTPUT
 
   build-products-service:
     name: Build Products Service
@@ -84,13 +84,13 @@ jobs:
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.MajorMinorPatch }}
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.version }}
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.MajorMinorPatch }}
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.version }}
       - name: Run integration tests
         run: dotnet test --logger "console;verbosity=detailed"
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
         env:
-          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.MajorMinorPatch }}
-          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.MajorMinorPatch }}
+          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ steps.Semver.outputs.version }}
+          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ steps.Semver.outputs.version }}
           CI: true
