@@ -20,6 +20,7 @@ jobs:
   gitversion:
     name: GitVersion
     runs-on: ubuntu-latest
+    needs: checkout
     steps:
       - uses: gittools/actions/gitversion/setup@v3.0.0
       - id: Semver
@@ -29,7 +30,7 @@ jobs:
 
   build-products-service:
     name: Build Products Service
-    needs: checkout
+    needs: gitversion
     runs-on: ubuntu-latest
     steps:
       - name: Download app artifact
@@ -45,7 +46,7 @@ jobs:
 
   build-products-service-migrations:
     name: Build Products Service Migrations
-    needs: checkout
+    needs: gitversion
     runs-on: ubuntu-latest
     steps:
       - name: Download app artifact
@@ -61,7 +62,7 @@ jobs:
 
   build-products-service-client:
     name: Build Products Service Client
-    needs: checkout
+    needs: gitversion
     runs-on: ubuntu-latest
     steps:
       - name: Download app artifact
