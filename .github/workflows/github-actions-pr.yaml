@@ -6,6 +6,8 @@ jobs:
   gitversion:
     name: GitVersion
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.Semver.outputs.MajorMinorPatch }}
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
@@ -14,8 +16,6 @@ jobs:
       - uses: gittools/actions/gitversion/setup@v3.0.0
       - id: Semver
         uses: gittools/actions/gitversion/execute@v3.0.0
-      - name: Output GitVersion
-        run: echo "version=${{ steps.Semver.outputs.MajorMinorPatch }}" >> $GITHUB_OUTPUT
 
   build-products-service:
     name: Build Products Service
