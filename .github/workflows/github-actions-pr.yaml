@@ -3,29 +3,14 @@ name: CI Pipeline on Pull Request
 'on': pull_request
 
 jobs:
-  checkout:
-    name: Checkout Repository
+  gitversion:
+    name: GitVersion
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
         with:
           fetch-depth: 0
-      - name: Publish to Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: app
-          path: .
-
-  gitversion:
-    name: GitVersion
-    runs-on: ubuntu-latest
-    needs: checkout
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app
       - uses: gittools/actions/gitversion/setup@v3.0.0
       - id: Semver
         uses: gittools/actions/gitversion/execute@v3.0.0
@@ -37,10 +22,8 @@ jobs:
     needs: gitversion
     runs-on: ubuntu-latest
     steps:
-      - name: Download app artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app
+      - uses: actions/checkout@v4
+        name: Checkout Repository
       - name: Restore dependencies of products service
         run: dotnet restore 
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
@@ -53,10 +36,8 @@ jobs:
     needs: gitversion
     runs-on: ubuntu-latest
     steps:
-      - name: Download app artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app
+      - uses: actions/checkout@v4
+        name: Checkout Repository
       - name: Restore dependencies of products service migrations
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
@@ -69,10 +50,8 @@ jobs:
     needs: gitversion
     runs-on: ubuntu-latest
     steps:
-      - name: Download app artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app
+      - uses: actions/checkout@v4
+        name: Checkout Repository
       - name: Restore dependencies of products service client
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
@@ -85,10 +64,8 @@ jobs:
     needs: [build-products-service, build-products-service-migrations, build-products-service-client]
     runs-on: ubuntu-latest
     steps:
-      - name: Download app artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app
+      - uses: actions/checkout@v4
+        name: Checkout Repository
       - name: Restore dependencies of unit tests
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
@@ -101,10 +78,8 @@ jobs:
     needs: [unit-tests]
     runs-on: ubuntu-latest
     steps:
-      - name: Download app artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app
+      - uses: actions/checkout@v4
+        name: Checkout Repository
       - name: Restore dependencies of integration tests
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
