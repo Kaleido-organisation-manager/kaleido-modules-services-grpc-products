@@ -70,7 +70,7 @@ jobs:
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
       - name: Run unit tests
-        run: dotnet test --logger "console;verbosity=detailed"
+        run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
 
   integration-tests:
@@ -88,7 +88,7 @@ jobs:
       - name: Build Migrations Docker Image
         run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
       - name: Run integration tests
-        run: dotnet test --logger "console;verbosity=detailed"
+        run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
         env:
           PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
