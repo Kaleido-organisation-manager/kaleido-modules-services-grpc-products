@@ -1,13 +1,12 @@
 name: CI/CD Pipeline on merge
 
-on:
-  workflow_dispatch:
-  pull_request:
-    types:
-      - closed
+'on':
+  push:
     branches:
-      - main
       - develop
+      - main
+  workflow_dispatch:
+
 
 jobs:
   gitversion:
