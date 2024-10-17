@@ -1,4 +1,4 @@
-name: CI/CD Pipeline on main merge
+name: CI/CD Pipeline on merge
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ on:
       - closed
     branches:
       - main
+      - develop
 
 jobs:
   gitversion:
