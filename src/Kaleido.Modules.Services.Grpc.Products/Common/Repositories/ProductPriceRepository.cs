@@ -7,9 +7,9 @@ using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Common.Repositories;
 
-public class ProductPricesRepository : BaseRepository<ProductPriceEntity, ProductsDbContext>, IProductPricesRepository
+public class ProductPriceRepository : BaseRepository<ProductPriceEntity, ProductsDbContext>, IProductPriceRepository
 {
-    public ProductPricesRepository(ILogger<ProductPricesRepository> logger, ProductsDbContext dbContext)
+    public ProductPriceRepository(ILogger<ProductPriceRepository> logger, ProductsDbContext dbContext)
     : base(logger, dbContext, dbContext.ProductPrices)
     {
     }

@@ -7,9 +7,9 @@ namespace Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 
 public class ProductValidator : IProductValidator
 {
-    private readonly IProductsRepository _productsRepository;
+    private readonly IProductRepository _productsRepository;
 
-    public ProductValidator(IProductsRepository productsRepository)
+    public ProductValidator(IProductRepository productsRepository)
     {
         _productsRepository = productsRepository;
     }
@@ -80,12 +80,12 @@ public class ProductValidator : IProductValidator
 
         if (string.IsNullOrEmpty(categoryKey))
         {
-            validationResult.AddRequiredError([nameof(Product), nameof(categoryKey)], "Product CategoryId is required");
+            validationResult.AddRequiredError([nameof(Product), nameof(categoryKey)], "Product CategoryKey is required");
         }
 
         if (!Guid.TryParse(categoryKey, out var guid))
         {
-            validationResult.AddInvalidFormatError([nameof(Product), nameof(categoryKey)], "Product CategoryId is not a valid GUID");
+            validationResult.AddInvalidFormatError([nameof(Product), nameof(categoryKey)], "Product CategoryKey is not a valid GUID");
         }
 
         // TODO: Check if category exists using the category service

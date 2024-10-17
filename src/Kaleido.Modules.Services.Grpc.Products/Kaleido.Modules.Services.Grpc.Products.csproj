@@ -17,6 +17,8 @@
     <ProtoBuf Include="..\Proto\Models\product-create.proto" GrpcServices="None" Link="Proto\Models\product-create.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\Models\product-delete.proto" GrpcServices="None" Link="Proto\Models\product-delete.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\Models\product-get-all-by-category-key.proto" GrpcServices="None" Link="Proto\Models\product-get-all-by-category-key.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-all-by-name-and-category-key.proto" GrpcServices="None" Link="Proto\Models\product-get-all-by-name-and-category-key.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-all-by-name.proto" GrpcServices="None" Link="Proto\Models\product-get-all-by-name.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\Models\product-get-all.proto" GrpcServices="None" Link="Proto\Models\product-get-all.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\Models\product-get-revision-price.proto" GrpcServices="None" Link="Proto\Models\product-get-revision-price.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\Models\product-get-revision.proto" GrpcServices="None" Link="Proto\Models\product-get-revision.proto" ProtoRoot="../Proto" />
@@ -25,8 +27,6 @@
     <ProtoBuf Include="..\Proto\Models\product-get.proto" GrpcServices="None" Link="Proto\Models\product-get.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\Models\product-update.proto" GrpcServices="None" Link="Proto\Models\product-update.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\product-service.proto" GrpcServices="Server" Link="Proto\product-service.proto" ProtoRoot="../Proto" />
-
-    <!-- <Protobuf Include="Protos\products.proto" GrpcServices="Server" /> -->
   </ItemGroup>
 
   <ItemGroup>

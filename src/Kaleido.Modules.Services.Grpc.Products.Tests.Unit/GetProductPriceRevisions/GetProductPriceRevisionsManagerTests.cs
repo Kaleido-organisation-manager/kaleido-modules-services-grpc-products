@@ -37,7 +37,7 @@ public class GetProductPriceRevisionsManagerTests
             new ProductPriceRevision { Revision = 2, Value = 10.99f }
         };
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_productPriceEntities);
 
@@ -61,7 +61,7 @@ public class GetProductPriceRevisionsManagerTests
         Assert.Equal(_expectedRevisions[1].Revision, result.ElementAt(1).Revision);
         Assert.Equal(_expectedRevisions[1].Value, result.ElementAt(1).Value);
 
-        _mocker.GetMock<IProductPricesRepository>().Verify(
+        _mocker.GetMock<IProductPriceRepository>().Verify(
             x => x.GetAllRevisionsAsync(Guid.Parse(_validProductKey), Guid.Parse(_validCurrencyKey), It.IsAny<CancellationToken>()),
             Times.Once);
         _mocker.GetMock<IProductMapper>().Verify(x => x.ToProductPriceRevision(It.IsAny<ProductPriceEntity>()), Times.Exactly(_productPriceEntities.Count));
@@ -71,7 +71,7 @@ public class GetProductPriceRevisionsManagerTests
     public async Task GetAllAsync_NoRevisions_ReturnsEmptyList()
     {
         // Arrange
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProductPriceEntity>());
 
@@ -80,7 +80,7 @@ public class GetProductPriceRevisionsManagerTests
 
         // Assert
         Assert.Empty(result);
-        _mocker.GetMock<IProductPricesRepository>().Verify(
+        _mocker.GetMock<IProductPriceRepository>().Verify(
             x => x.GetAllRevisionsAsync(Guid.Parse(_validProductKey), Guid.Parse(_validCurrencyKey), It.IsAny<CancellationToken>()),
             Times.Once);
         _mocker.GetMock<IProductMapper>().Verify(x => x.ToProductPriceRevision(It.IsAny<ProductPriceEntity>()), Times.Never);
@@ -112,7 +112,7 @@ public class GetProductPriceRevisionsManagerTests
         // Arrange
         var expectedException = new Exception("Database error");
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 

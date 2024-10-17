@@ -122,7 +122,7 @@ public class ProductValidatorTests
             Description = "Valid description"
         };
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProductEntity() { Name = "Valid Product", CategoryKey = Guid.NewGuid() });
 
@@ -159,7 +159,7 @@ public class ProductValidatorTests
         // Arrange
         var productKey = Guid.NewGuid().ToString();
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProductEntity() { Name = "Valid Product", CategoryKey = Guid.NewGuid() });
 
@@ -205,7 +205,7 @@ public class ProductValidatorTests
         // Arrange
         var productKey = Guid.NewGuid().ToString();
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ProductEntity?)null);
 
@@ -265,7 +265,7 @@ public class ProductValidatorTests
         // Arrange
         var productKey = Guid.NewGuid();
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProductEntity> { new ProductEntity() { Key = productKey, Name = "Valid Product", CategoryKey = Guid.NewGuid() } });
 

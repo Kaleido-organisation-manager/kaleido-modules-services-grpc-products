@@ -8,19 +8,19 @@ namespace Kaleido.Modules.Services.Grpc.Products.GetAllByCategoryKey;
 public class GetAllByCategoryKeyManager : IGetAllByCategoryKeyManager
 {
 
-    private readonly IProductsRepository _productsRepository;
-    private readonly IProductPricesRepository _productPricesRepository;
+    private readonly IProductRepository _productRepository;
+    private readonly IProductPriceRepository _productPriceRepository;
     private readonly IProductMapper _productMapper;
     private readonly ILogger<GetAllByCategoryKeyManager> _logger;
 
     public GetAllByCategoryKeyManager(
-        IProductsRepository productsRepository,
-        IProductPricesRepository productPricesRepository,
+        IProductRepository productRepository,
+        IProductPriceRepository productPriceRepository,
         IProductMapper productMapper,
         ILogger<GetAllByCategoryKeyManager> logger)
     {
-        _productsRepository = productsRepository;
-        _productPricesRepository = productPricesRepository;
+        _productRepository = productRepository;
+        _productPriceRepository = productPriceRepository;
         _productMapper = productMapper;
         _logger = logger;
     }
@@ -30,14 +30,14 @@ public class GetAllByCategoryKeyManager : IGetAllByCategoryKeyManager
         var categoryKey = Guid.Parse(key);
         _logger.LogInformation("GetAllProductsByCategoryId called with CategoryKey: {CategoryKey}", categoryKey);
 
-        var productEntityList = await _productsRepository.GetAllByCategoryIdAsync(categoryKey, cancellationToken);
+        var productEntityList = await _productRepository.GetAllByCategoryIdAsync(categoryKey, cancellationToken);
 
         var productList = new List<Product>();
 
         foreach (var productEntity in productEntityList)
         {
             _logger.LogInformation("Retrieving prices for product with key: {Key}", productEntity.Key);
-            var productPrices = await _productPricesRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
+            var productPrices = await _productPriceRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
             productList.Add(_productMapper.FromEntities(productEntity, productPrices));
         }
 

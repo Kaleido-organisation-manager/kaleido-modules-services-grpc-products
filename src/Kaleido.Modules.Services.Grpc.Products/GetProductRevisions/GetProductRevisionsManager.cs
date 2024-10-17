@@ -6,14 +6,14 @@ namespace Kaleido.Modules.Services.Grpc.Products.GetProductRevisions;
 
 public class GetProductRevisionsManager : IGetProductRevisionsManager
 {
-    private readonly IProductsRepository _productRepository;
+    private readonly IProductRepository _productRepository;
     private readonly ILogger<GetProductRevisionsManager> _logger;
     private readonly IProductMapper _mapper;
 
     public GetProductRevisionsManager(
         ILogger<GetProductRevisionsManager> logger,
         IProductMapper mapper,
-        IProductsRepository productRepository
+        IProductRepository productRepository
         )
     {
         _productRepository = productRepository;

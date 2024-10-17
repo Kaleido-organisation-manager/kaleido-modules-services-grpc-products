@@ -13,4 +13,10 @@ public class ValidationError(IEnumerable<string> path, ValidationErrorType error
         Path = prefix.Concat(Path);
         return this;
     }
+
+    public ValidationError RemovePathPrefix(IEnumerable<string> prefix)
+    {
+        Path = Path.SkipWhile(p => prefix.Contains(p));
+        return this;
+    }
 }

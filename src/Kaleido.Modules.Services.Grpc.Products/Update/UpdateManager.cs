@@ -11,27 +11,27 @@ public class UpdateManager : IUpdateManager
 {
     private readonly ILogger<UpdateManager> _logger;
     private readonly IProductMapper _productMapper;
-    private readonly IProductPricesRepository _productPricesRepository;
-    private readonly IProductsRepository _productsRepository;
+    private readonly IProductPriceRepository _productPriceRepository;
+    private readonly IProductRepository _productRepository;
 
     public UpdateManager(
         ILogger<UpdateManager> logger,
         IProductMapper productMapper,
-        IProductPricesRepository productPricesRepository,
-        IProductsRepository productsRepository
+        IProductPriceRepository productPriceRepository,
+        IProductRepository productRepository
         )
     {
         _logger = logger;
         _productMapper = productMapper;
-        _productPricesRepository = productPricesRepository;
-        _productsRepository = productsRepository;
+        _productPriceRepository = productPriceRepository;
+        _productRepository = productRepository;
     }
 
     public async Task<Product?> UpdateAsync(Product product, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating Product with key: {key}", product.Key);
         var productKey = Guid.Parse(product.Key);
-        var storedProduct = await _productsRepository.GetActiveAsync(productKey, cancellationToken);
+        var storedProduct = await _productRepository.GetActiveAsync(productKey, cancellationToken);
 
         if (storedProduct == null)
         {
@@ -45,10 +45,10 @@ public class UpdateManager : IUpdateManager
         if (!storedProduct.Equals(productEntity))
         {
             _logger.LogInformation("Product with key: {key} has changed, updating", product.Key);
-            updatedProductEntity = await _productsRepository.UpdateAsync(productEntity, cancellationToken);
+            updatedProductEntity = await _productRepository.UpdateAsync(productEntity, cancellationToken);
         }
 
-        var storedProductPrices = await _productPricesRepository.GetAllByProductKeyAsync(productKey, cancellationToken);
+        var storedProductPrices = await _productPriceRepository.GetAllByProductKeyAsync(productKey, cancellationToken);
 
         var productPriceEntities = new List<ProductPriceEntity>();
 
@@ -61,13 +61,13 @@ public class UpdateManager : IUpdateManager
             if (incomingProductPrice == null)
             {
                 _logger.LogInformation("ProductPrice with key: {key} not found, archiving", storedProductPrice.Key);
-                await _productPricesRepository.UpdateStatusAsync(storedProductPrice.Key!, EntityStatus.Archived, cancellationToken);
+                await _productPriceRepository.UpdateStatusAsync(storedProductPrice.Key!, EntityStatus.Archived, cancellationToken);
             }
             else if (!storedProductPrice.Equals(_productMapper.ToCreatePriceEntity(storedProduct.Key!, incomingProductPrice)))
             {
                 _logger.LogInformation("ProductPrice with key: {key} has changed, updating", storedProductPrice.Key);
                 var newProductPrice = _productMapper.ToCreatePriceEntity(storedProduct.Key!, incomingProductPrice, storedProductPrice.Key, storedProductPrice.Revision + 1);
-                var updatedProductPrice = await _productPricesRepository.UpdateAsync(newProductPrice, cancellationToken);
+                var updatedProductPrice = await _productPriceRepository.UpdateAsync(newProductPrice, cancellationToken);
                 productPriceEntities.Add(updatedProductPrice);
             }
             else
@@ -82,7 +82,7 @@ public class UpdateManager : IUpdateManager
         {
             _logger.LogInformation("New ProductPrice found for currency {currencyKey}, creating", newProductPrice.CurrencyKey);
             var productPrice = _productMapper.ToCreatePriceEntity(updatedProductEntity.Key, newProductPrice, revision: 1);
-            var createdProductPrice = await _productPricesRepository.CreateAsync(productPrice, cancellationToken);
+            var createdProductPrice = await _productPriceRepository.CreateAsync(productPrice, cancellationToken);
             productPriceEntities.Add(createdProductPrice);
         }
 

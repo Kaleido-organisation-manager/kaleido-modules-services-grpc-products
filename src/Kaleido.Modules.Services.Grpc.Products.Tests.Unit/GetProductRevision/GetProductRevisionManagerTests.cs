@@ -43,7 +43,7 @@ public class GetProductRevisionManagerTests
             Revision = revision
         };
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetRevisionAsync(Guid.Parse(_validProductKey), revision, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_expectedProductEntity);
 
@@ -60,7 +60,7 @@ public class GetProductRevisionManagerTests
 
         // Assert
         Assert.Equal(_expectedProductRevision, result);
-        _mocker.GetMock<IProductsRepository>().Verify(
+        _mocker.GetMock<IProductRepository>().Verify(
             x => x.GetRevisionAsync(Guid.Parse(_validProductKey), _expectedProductRevision.Revision, It.IsAny<CancellationToken>()),
             Times.Once);
         _mocker.GetMock<IProductMapper>().Verify(
@@ -85,7 +85,7 @@ public class GetProductRevisionManagerTests
         // Arrange
         var nonExistentKey = Guid.NewGuid().ToString();
         var revision = 1;
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetRevisionAsync(Guid.Parse(nonExistentKey), revision, It.IsAny<CancellationToken>()))
             .ReturnsAsync((ProductEntity?)null);
 
@@ -101,7 +101,7 @@ public class GetProductRevisionManagerTests
     {
         // Arrange
         var revision = 1;
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetRevisionAsync(Guid.Parse(_validProductKey), revision, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception());
 

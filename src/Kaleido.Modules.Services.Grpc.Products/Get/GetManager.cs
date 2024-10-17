@@ -9,34 +9,34 @@ public class GetManager : IGetManager
 {
     private readonly ILogger<GetManager> _logger;
     private readonly IProductMapper _productMapper;
-    private readonly IProductPricesRepository _productPricesRepository;
-    private readonly IProductsRepository _productsRepository;
+    private readonly IProductPriceRepository _productPriceRepository;
+    private readonly IProductRepository _productRepository;
 
     public GetManager(
         ILogger<GetManager> logger,
         IProductMapper productMapper,
-        IProductPricesRepository productPricesRepository,
-        IProductsRepository productsRepository
+        IProductPriceRepository productPriceRepository,
+        IProductRepository productRepository
         )
     {
         _logger = logger;
         _productMapper = productMapper;
-        _productPricesRepository = productPricesRepository;
-        _productsRepository = productsRepository;
+        _productPriceRepository = productPriceRepository;
+        _productRepository = productRepository;
     }
 
     public async Task<Product?> GetAsync(string key, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GetProduct called with key: {Key}", key);
         var productKey = Guid.Parse(key);
-        var productEntity = await _productsRepository.GetActiveAsync(productKey, cancellationToken);
+        var productEntity = await _productRepository.GetActiveAsync(productKey, cancellationToken);
 
         if (productEntity == null)
         {
             return null;
         }
 
-        var productPrices = await _productPricesRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
+        var productPrices = await _productPriceRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
 
         return _productMapper.FromEntities(productEntity, productPrices);
     }

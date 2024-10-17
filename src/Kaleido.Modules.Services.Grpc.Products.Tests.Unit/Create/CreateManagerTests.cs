@@ -32,7 +32,7 @@ public class CreateManagerTests
             .Setup(x => x.ToCreateEntity(It.IsAny<Product>(), It.IsAny<int>()))
             .Returns(_expectedProductEntity);
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_expectedProductEntity);
 
@@ -40,7 +40,7 @@ public class CreateManagerTests
             .Setup(x => x.ToCreatePriceEntity(It.IsAny<Guid>(), It.IsAny<ProductPrice>(), It.IsAny<Guid?>(), It.IsAny<int>()))
             .Returns(_expectedPriceEntities.First());
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_expectedPriceEntities);
 
@@ -63,8 +63,8 @@ public class CreateManagerTests
 
         // Assert
         Assert.NotNull(result);
-        _mocker.GetMock<IProductsRepository>().Verify(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPricesRepository>().Verify(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mocker.GetMock<IProductRepository>().Verify(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -85,8 +85,8 @@ public class CreateManagerTests
 
         // Assert
         Assert.Equal(expectedProduct, result);
-        _mocker.GetMock<IProductsRepository>().Verify(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPricesRepository>().Verify(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mocker.GetMock<IProductRepository>().Verify(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class CreateManagerTests
         var createProduct = CreateSampleCreateProduct();
         var expectedException = new Exception("Database error");
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 

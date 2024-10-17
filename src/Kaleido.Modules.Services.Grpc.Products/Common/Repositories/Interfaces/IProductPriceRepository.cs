@@ -2,7 +2,7 @@ using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 
-public interface IProductPricesRepository : IBaseRepository<ProductPriceEntity>
+public interface IProductPriceRepository : IBaseRepository<ProductPriceEntity>
 {
     Task<IEnumerable<ProductPriceEntity>> GetAllActiveByProductKeyAsync(Guid productId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ProductPriceEntity>> GetAllByProductKeyAsync(Guid productId, CancellationToken cancellationToken = default);

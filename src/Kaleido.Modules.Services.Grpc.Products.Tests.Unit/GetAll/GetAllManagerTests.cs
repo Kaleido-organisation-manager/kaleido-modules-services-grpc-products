@@ -41,11 +41,11 @@ public class GetAllManagerTests
             new Product { Key = _productEntities[1].Key.ToString(), Name = "Product 2", CategoryKey = _productEntities[1].CategoryKey.ToString() }
         };
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_productEntities);
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_productPriceEntities);
 
@@ -70,8 +70,8 @@ public class GetAllManagerTests
         Assert.Equal(_expectedProducts[1].Key, result.ElementAt(1).Key);
         Assert.Equal(_expectedProducts[1].Name, result.ElementAt(1).Name);
 
-        _mocker.GetMock<IProductsRepository>().Verify(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPricesRepository>().Verify(x => x.GetAllActiveByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        _mocker.GetMock<IProductRepository>().Verify(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.GetAllActiveByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         _mocker.GetMock<IProductMapper>().Verify(x => x.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()), Times.Exactly(2));
     }
 
@@ -79,11 +79,11 @@ public class GetAllManagerTests
     public async Task GetAllAsync_NoProducts_ReturnsEmptyList()
     {
         // Arrange
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProductEntity>());
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProductPriceEntity>());
 
@@ -92,8 +92,8 @@ public class GetAllManagerTests
 
         // Assert
         Assert.Empty(result);
-        _mocker.GetMock<IProductsRepository>().Verify(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPricesRepository>().Verify(x => x.GetAllActiveByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mocker.GetMock<IProductRepository>().Verify(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.GetAllActiveByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         _mocker.GetMock<IProductMapper>().Verify(x => x.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()), Times.Never);
     }
 
@@ -101,7 +101,7 @@ public class GetAllManagerTests
     public async Task GetAllAsync_RepositoryThrowsException_PropagatesException()
     {
         // Arrange
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception());
 

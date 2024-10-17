@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package Kaleido.Grpc.Products;
 
-// option csharp_namespace = "Grpc.Products";
-
 import "Models/product-get.proto";
 import "Models/product-get-all.proto";
 import "Models/product-get-all-by-category-key.proto";
@@ -14,6 +12,8 @@ import "Models/product-get-revisions.proto";
 import "Models/product-get-revision.proto";
 import "Models/product-get-revisions-price.proto";
 import "Models/product-get-revision-price.proto";
+import "Models/product-get-all-by-name.proto";
+import "Models/product-get-all-by-name-and-category-key.proto";
 
 service GrpcProducts {
   rpc GetProduct(GetProductRequest) returns (GetProductResponse) {}
@@ -26,4 +26,6 @@ service GrpcProducts {
   rpc GetProductRevision(GetProductRevisionRequest) returns (GetProductRevisionResponse) {}
   rpc GetProductPriceRevisions(GetProductPriceRevisionsRequest) returns (GetProductPriceRevisionsResponse) {}
   rpc GetProductPriceRevision(GetProductPriceRevisionRequest) returns (GetProductPriceRevisionResponse) {}
+  rpc GetAllProductsByName(GetAllProductsByNameRequest) returns (GetAllProductsByNameResponse) {}
+  rpc GetAllProductsByNameAndCategoryKey(GetAllProductsByNameAndCategoryKeyRequest) returns (GetAllProductsByNameAndCategoryKeyResponse) {}
 }

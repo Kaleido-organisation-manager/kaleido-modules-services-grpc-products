@@ -40,11 +40,11 @@ public class DeleteManagerTests
             }
         };
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedEntity);
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.DeleteByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedProductPrices);
     }
@@ -56,10 +56,10 @@ public class DeleteManagerTests
         await _sut.DeleteAsync(_validProductKey);
 
         // Assert
-        _mocker.GetMock<IProductsRepository>().Verify(
+        _mocker.GetMock<IProductRepository>().Verify(
             x => x.DeleteAsync(It.Is<Guid>(g => g == Guid.Parse(_validProductKey)), It.IsAny<CancellationToken>()),
             Times.Once);
-        _mocker.GetMock<IProductPricesRepository>().Verify(
+        _mocker.GetMock<IProductPriceRepository>().Verify(
             x => x.DeleteByProductKeyAsync(It.Is<Guid>(g => g == Guid.Parse(_validProductKey)), It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -80,7 +80,7 @@ public class DeleteManagerTests
         // Arrange
         var expectedException = new Exception("Product not found");
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -95,7 +95,7 @@ public class DeleteManagerTests
         // Arrange
         var expectedException = new Exception("Error deleting prices");
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.DeleteByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -108,7 +108,7 @@ public class DeleteManagerTests
     public async Task DeleteAsync_ReturnsNull_WhenProductNotFound()
     {
         // Arrange
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ProductEntity?)null);
 
@@ -117,10 +117,10 @@ public class DeleteManagerTests
 
         // Assert
         Assert.Null(result);
-        _mocker.GetMock<IProductPricesRepository>().Verify(
+        _mocker.GetMock<IProductPriceRepository>().Verify(
             x => x.DeleteByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        _mocker.GetMock<IProductsRepository>().Verify(
+        _mocker.GetMock<IProductRepository>().Verify(
             x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }

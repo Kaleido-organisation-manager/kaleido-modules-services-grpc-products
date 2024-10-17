@@ -8,21 +8,21 @@ public class CreateManager : ICreateManager
 {
     private readonly ILogger<CreateManager> _logger;
     private readonly IProductMapper _productMapper;
-    private readonly IProductPricesRepository _productPricesRepository;
-    private readonly IProductsRepository _productsRepository;
+    private readonly IProductPriceRepository _productPriceRepository;
+    private readonly IProductRepository _productRepository;
 
 
     public CreateManager(
                 ILogger<CreateManager> logger,
                 IProductMapper productMapper,
-                IProductPricesRepository productPricesRepository,
-                IProductsRepository productRepository
+                IProductPriceRepository productPriceRepository,
+                IProductRepository productRepository
         )
     {
         _logger = logger;
         _productMapper = productMapper;
-        _productPricesRepository = productPricesRepository;
-        _productsRepository = productRepository;
+        _productPriceRepository = productPriceRepository;
+        _productRepository = productRepository;
     }
 
     public async Task<Product> CreateAsync(CreateProduct createProduct, CancellationToken cancellationToken = default)
@@ -45,14 +45,14 @@ public class CreateManager : ICreateManager
 
         _logger.LogInformation("Saving Product with key: {Key}", product.Key);
         var productEntity = _productMapper.ToCreateEntity(product);
-        var createdProductEntity = await _productsRepository.CreateAsync(productEntity, cancellationToken);
+        var createdProductEntity = await _productRepository.CreateAsync(productEntity, cancellationToken);
 
 
 
         var productPriceEntities = product.Prices.Select(price => _productMapper.ToCreatePriceEntity(createdProductEntity.Key!, price)).ToList();
         if (productPriceEntities.Any())
         {
-            await _productPricesRepository.CreateRangeAsync(productPriceEntities, cancellationToken);
+            await _productPriceRepository.CreateRangeAsync(productPriceEntities, cancellationToken);
         }
 
         _logger.LogInformation("Product with key: {key} saved", product.Key);

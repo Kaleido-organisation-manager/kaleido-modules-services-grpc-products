@@ -53,6 +53,14 @@ public class ValidationResult
         };
     }
 
+    public ValidationResult RemovePathPrefix(IEnumerable<string> prefix)
+    {
+        return new ValidationResult
+        {
+            Errors = Errors.Select(e => e.RemovePathPrefix(prefix))
+        };
+    }
+
     public void ThrowIfInvalid()
     {
         if (!IsValid)

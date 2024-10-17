@@ -6,17 +6,17 @@ namespace Kaleido.Modules.Services.Grpc.Products.GetProductPriceRevisions;
 
 public class GetProductPriceRevisionsManager : IGetProductPriceRevisionsManager
 {
-    private readonly IProductPricesRepository _productPricesRepository;
+    private readonly IProductPriceRepository _productPriceRepository;
     private readonly IProductMapper _productMapper;
     private readonly ILogger<GetProductPriceRevisionsManager> _logger;
 
     public GetProductPriceRevisionsManager(
-        IProductPricesRepository productPricesRepository,
+        IProductPriceRepository productPriceRepository,
         IProductMapper productMapper,
         ILogger<GetProductPriceRevisionsManager> logger
         )
     {
-        _productPricesRepository = productPricesRepository;
+        _productPriceRepository = productPriceRepository;
         _productMapper = productMapper;
         _logger = logger;
     }
@@ -26,7 +26,7 @@ public class GetProductPriceRevisionsManager : IGetProductPriceRevisionsManager
         _logger.LogInformation("Getting product price revisions for key: {Key} and currency: {Currency}", key, currency);
         var productKey = Guid.Parse(key);
         var currencyKey = Guid.Parse(currency);
-        var productPrices = await _productPricesRepository.GetAllRevisionsAsync(productKey, currencyKey, cancellationToken);
+        var productPrices = await _productPriceRepository.GetAllRevisionsAsync(productKey, currencyKey, cancellationToken);
         var productPriceRevisions = productPrices.Select(p => _productMapper.ToProductPriceRevision(p)).ToList();
         return productPriceRevisions;
     }

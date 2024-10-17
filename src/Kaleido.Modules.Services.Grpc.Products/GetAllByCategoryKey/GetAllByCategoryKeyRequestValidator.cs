@@ -21,6 +21,7 @@ public class GetAllByCategoryKeyRequestValidator : IRequestValidator<GetAllProdu
 
         if (!keyValidation.IsValid)
         {
+            keyValidation.RemovePathPrefix([nameof(Product)]);
             validationResult.Merge(keyValidation);
         }
 

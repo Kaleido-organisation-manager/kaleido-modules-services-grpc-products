@@ -42,7 +42,7 @@ public class GetProductPriceRevisionManagerTests
             Price = 9.99f
         };
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.GetRevisionAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_productPriceRevisionEntity);
 
@@ -68,7 +68,7 @@ public class GetProductPriceRevisionManagerTests
         Assert.NotNull(result);
         Assert.Equal(_expectedRevision, result);
 
-        _mocker.GetMock<IProductPricesRepository>().Verify(
+        _mocker.GetMock<IProductPriceRepository>().Verify(
             x => x.GetRevisionAsync(Guid.Parse(productKey), Guid.Parse(currencyKey), _expectedRevision.Revision, It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -106,7 +106,7 @@ public class GetProductPriceRevisionManagerTests
         var expectedRevision = 1;
         var expectedException = new Exception("Database error");
 
-        _mocker.GetMock<IProductPricesRepository>()
+        _mocker.GetMock<IProductPriceRepository>()
             .Setup(x => x.GetRevisionAsync(Guid.Parse(productKey), Guid.Parse(currencyKey), expectedRevision, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 

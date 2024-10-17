@@ -6,42 +6,49 @@ namespace Kaleido.Modules.Services.Grpc.Products.Common.Services;
 
 public class ProductsService : GrpcProducts.GrpcProductsBase
 {
-    private readonly ILogger<ProductsService> _logger;
-    private readonly IBaseHandler<GetProductRequest, GetProductResponse> _getProductHandler;
-    private readonly IBaseHandler<GetAllProductsRequest, GetAllProductsResponse> _getAllProductsHandler;
-    private readonly IBaseHandler<GetAllProductsByCategoryKeyRequest, GetAllProductsByCategoryKeyResponse> _getAllProductsByCategoryKeyHandler;
     private readonly IBaseHandler<CreateProductRequest, CreateProductResponse> _createProductHandler;
-    private readonly IBaseHandler<UpdateProductRequest, UpdateProductResponse> _updateProductHandler;
     private readonly IBaseHandler<DeleteProductRequest, DeleteProductResponse> _deleteProductHandler;
-    private readonly IBaseHandler<GetProductRevisionsRequest, GetProductRevisionsResponse> _getProductRevisionsHandler;
-    private readonly IBaseHandler<GetProductRevisionRequest, GetProductRevisionResponse> _getProductRevisionHandler;
-    private readonly IBaseHandler<GetProductPriceRevisionsRequest, GetProductPriceRevisionsResponse> _getProductPriceRevisionsHandler;
+    private readonly IBaseHandler<GetAllProductsByCategoryKeyRequest, GetAllProductsByCategoryKeyResponse> _getAllProductsByCategoryKeyHandler;
+    private readonly IBaseHandler<GetAllProductsByNameAndCategoryKeyRequest, GetAllProductsByNameAndCategoryKeyResponse> _getAllProductsByNameAndCategoryKeyHandler;
+    private readonly IBaseHandler<GetAllProductsByNameRequest, GetAllProductsByNameResponse> _getAllProductsByNameHandler;
+    private readonly IBaseHandler<GetAllProductsRequest, GetAllProductsResponse> _getAllProductsHandler;
     private readonly IBaseHandler<GetProductPriceRevisionRequest, GetProductPriceRevisionResponse> _getProductPriceRevisionHandler;
+    private readonly IBaseHandler<GetProductPriceRevisionsRequest, GetProductPriceRevisionsResponse> _getProductPriceRevisionsHandler;
+    private readonly IBaseHandler<GetProductRequest, GetProductResponse> _getProductHandler;
+    private readonly IBaseHandler<GetProductRevisionRequest, GetProductRevisionResponse> _getProductRevisionHandler;
+    private readonly IBaseHandler<GetProductRevisionsRequest, GetProductRevisionsResponse> _getProductRevisionsHandler;
+    private readonly IBaseHandler<UpdateProductRequest, UpdateProductResponse> _updateProductHandler;
+    private readonly ILogger<ProductsService> _logger;
 
     public ProductsService(
-        ILogger<ProductsService> logger,
-        IBaseHandler<GetProductRequest, GetProductResponse> getProductHandler,
-        IBaseHandler<GetAllProductsRequest, GetAllProductsResponse> getAllProductsHandler,
-        IBaseHandler<GetAllProductsByCategoryKeyRequest, GetAllProductsByCategoryKeyResponse> getAllProductsByCategoryKeyHandler,
         IBaseHandler<CreateProductRequest, CreateProductResponse> createProductHandler,
-        IBaseHandler<UpdateProductRequest, UpdateProductResponse> updateProductHandler,
         IBaseHandler<DeleteProductRequest, DeleteProductResponse> deleteProductHandler,
-        IBaseHandler<GetProductRevisionsRequest, GetProductRevisionsResponse> getProductRevisionsHandler,
-        IBaseHandler<GetProductRevisionRequest, GetProductRevisionResponse> getProductRevisionHandler,
+        IBaseHandler<GetAllProductsByCategoryKeyRequest, GetAllProductsByCategoryKeyResponse> getAllProductsByCategoryKeyHandler,
+        IBaseHandler<GetAllProductsByNameAndCategoryKeyRequest, GetAllProductsByNameAndCategoryKeyResponse> getAllProductsByNameAndCategoryKeyHandler,
+        IBaseHandler<GetAllProductsByNameRequest, GetAllProductsByNameResponse> getAllProductsByNameHandler,
+        IBaseHandler<GetAllProductsRequest, GetAllProductsResponse> getAllProductsHandler,
+        IBaseHandler<GetProductPriceRevisionRequest, GetProductPriceRevisionResponse> getProductPriceRevisionHandler,
         IBaseHandler<GetProductPriceRevisionsRequest, GetProductPriceRevisionsResponse> getProductPriceRevisionsHandler,
-        IBaseHandler<GetProductPriceRevisionRequest, GetProductPriceRevisionResponse> getProductPriceRevisionHandler)
+        IBaseHandler<GetProductRequest, GetProductResponse> getProductHandler,
+        IBaseHandler<GetProductRevisionRequest, GetProductRevisionResponse> getProductRevisionHandler,
+        IBaseHandler<GetProductRevisionsRequest, GetProductRevisionsResponse> getProductRevisionsHandler,
+        IBaseHandler<UpdateProductRequest, UpdateProductResponse> updateProductHandler,
+        ILogger<ProductsService> logger
+        )
     {
-        _logger = logger;
-        _getProductHandler = getProductHandler;
-        _getAllProductsHandler = getAllProductsHandler;
-        _getAllProductsByCategoryKeyHandler = getAllProductsByCategoryKeyHandler;
         _createProductHandler = createProductHandler;
-        _updateProductHandler = updateProductHandler;
         _deleteProductHandler = deleteProductHandler;
-        _getProductRevisionsHandler = getProductRevisionsHandler;
-        _getProductRevisionHandler = getProductRevisionHandler;
-        _getProductPriceRevisionsHandler = getProductPriceRevisionsHandler;
+        _getAllProductsByCategoryKeyHandler = getAllProductsByCategoryKeyHandler;
+        _getAllProductsByNameAndCategoryKeyHandler = getAllProductsByNameAndCategoryKeyHandler;
+        _getAllProductsByNameHandler = getAllProductsByNameHandler;
+        _getAllProductsHandler = getAllProductsHandler;
+        _getProductHandler = getProductHandler;
         _getProductPriceRevisionHandler = getProductPriceRevisionHandler;
+        _getProductPriceRevisionsHandler = getProductPriceRevisionsHandler;
+        _getProductRevisionHandler = getProductRevisionHandler;
+        _getProductRevisionsHandler = getProductRevisionsHandler;
+        _logger = logger;
+        _updateProductHandler = updateProductHandler;
     }
 
     public override async Task<GetProductResponse> GetProduct(GetProductRequest request, ServerCallContext context)
@@ -102,5 +109,17 @@ public class ProductsService : GrpcProducts.GrpcProductsBase
     {
         _logger.LogInformation("gRPC request received for GetProductPriceRevision with key: {Key}, revision: {Revision}, and currencyKey: {CurrencyKey}", request.Key, request.Revision, request.CurrencyKey);
         return await _getProductPriceRevisionHandler.HandleAsync(request, context.CancellationToken);
+    }
+
+    public override async Task<GetAllProductsByNameResponse> GetAllProductsByName(GetAllProductsByNameRequest request, ServerCallContext context)
+    {
+        _logger.LogInformation("gRPC request received for GetAllProductsByName with name: {Name}", request.Name);
+        return await _getAllProductsByNameHandler.HandleAsync(request, context.CancellationToken);
+    }
+
+    public override async Task<GetAllProductsByNameAndCategoryKeyResponse> GetAllProductsByNameAndCategoryKey(GetAllProductsByNameAndCategoryKeyRequest request, ServerCallContext context)
+    {
+        _logger.LogInformation("gRPC request received for GetAllProductsByNameAndCategoryKey with name: {Name} and categoryKey: {CategoryKey}", request.Name, request.CategoryKey);
+        return await _getAllProductsByNameAndCategoryKeyHandler.HandleAsync(request, context.CancellationToken);
     }
 }

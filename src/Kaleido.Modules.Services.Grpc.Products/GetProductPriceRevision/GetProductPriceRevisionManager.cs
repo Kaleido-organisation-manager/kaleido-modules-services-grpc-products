@@ -11,15 +11,15 @@ public class GetProductPriceRevisionManager : IGetProductPriceRevisionManager
 {
     private readonly ILogger<GetProductPriceRevisionManager> _logger;
     private readonly IProductMapper _productMapper;
-    private readonly IProductPricesRepository _productPriceRevisionRepository;
+    private readonly IProductPriceRepository _productPriceRepository;
 
     public GetProductPriceRevisionManager(
-        IProductPricesRepository productPriceRevisionRepository,
+        IProductPriceRepository productPriceRepository,
         ILogger<GetProductPriceRevisionManager> logger,
         IProductMapper productMapper
         )
     {
-        _productPriceRevisionRepository = productPriceRevisionRepository;
+        _productPriceRepository = productPriceRepository;
         _logger = logger;
         _productMapper = productMapper;
     }
@@ -29,7 +29,7 @@ public class GetProductPriceRevisionManager : IGetProductPriceRevisionManager
         _logger.LogInformation("Getting product price revision for key: {Key} and revision: {Revision}", key, revision);
         var productKey = Guid.Parse(key);
         var currencyKey = Guid.Parse(currency);
-        var productPrice = await _productPriceRevisionRepository.GetRevisionAsync(productKey, currencyKey, revision, cancellationToken);
+        var productPrice = await _productPriceRepository.GetRevisionAsync(productKey, currencyKey, revision, cancellationToken);
         return productPrice == null ? null : _productMapper.ToProductPriceRevision(productPrice);
     }
 }

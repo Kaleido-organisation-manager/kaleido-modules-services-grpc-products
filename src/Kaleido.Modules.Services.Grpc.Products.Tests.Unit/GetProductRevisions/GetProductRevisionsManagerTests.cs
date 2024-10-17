@@ -36,7 +36,7 @@ public class GetProductRevisionsManagerTests
             new ProductRevision { Revision = 2, Name = "Product 2" }
         };
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_productEntities);
 
@@ -58,7 +58,7 @@ public class GetProductRevisionsManagerTests
         Assert.Equal(_expectedRevisions[1].Revision, result.ElementAt(1).Revision);
         Assert.Equal(_expectedRevisions[1].Name, result.ElementAt(1).Name);
 
-        _mocker.GetMock<IProductsRepository>().Verify(
+        _mocker.GetMock<IProductRepository>().Verify(
             x => x.GetAllRevisionsAsync(Guid.Parse(_validProductKey), It.IsAny<CancellationToken>()),
             Times.Once);
         _mocker.GetMock<IProductMapper>().Verify(x => x.ToProductRevision(It.IsAny<ProductEntity>()), Times.Exactly(_productEntities.Count));
@@ -68,7 +68,7 @@ public class GetProductRevisionsManagerTests
     public async Task GetAllAsync_NoRevisions_ReturnsEmptyList()
     {
         // Arrange
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProductEntity>());
 
@@ -77,7 +77,7 @@ public class GetProductRevisionsManagerTests
 
         // Assert
         Assert.Empty(result);
-        _mocker.GetMock<IProductsRepository>().Verify(
+        _mocker.GetMock<IProductRepository>().Verify(
             x => x.GetAllRevisionsAsync(Guid.Parse(_validProductKey), It.IsAny<CancellationToken>()),
             Times.Once);
         _mocker.GetMock<IProductMapper>().Verify(x => x.ToProductRevision(It.IsAny<ProductEntity>()), Times.Never);
@@ -99,7 +99,7 @@ public class GetProductRevisionsManagerTests
         // Arrange
         var expectedException = new Exception("Database error");
 
-        _mocker.GetMock<IProductsRepository>()
+        _mocker.GetMock<IProductRepository>()
             .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
