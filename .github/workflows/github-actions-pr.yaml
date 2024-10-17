@@ -1,0 +1,96 @@
+name: CI Pipeline on Pull Request
+
+'on': pull_request
+
+jobs:
+  gitversion:
+    name: GitVersion
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.Semver.outputs.MajorMinorPatch }}
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+        with:
+          fetch-depth: 0
+      - uses: gittools/actions/gitversion/setup@v3.0.0
+      - id: Semver
+        uses: gittools/actions/gitversion/execute@v3.0.0
+
+  build-products-service:
+    name: Build Products Service
+    needs: gitversion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Restore dependencies of products service
+        run: dotnet restore 
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products
+      - name: Build products service
+        run: dotnet build
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products
+
+  build-products-service-migrations:
+    name: Build Products Service Migrations
+    needs: gitversion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Restore dependencies of products service migrations
+        run: dotnet restore
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
+      - name: Build products service migrations
+        run: dotnet build
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
+
+  build-products-service-client:
+    name: Build Products Service Client
+    needs: gitversion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Restore dependencies of products service client
+        run: dotnet restore
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
+      - name: Build products service client
+        run: dotnet build
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
+
+  unit-tests:
+    name: Run Unit Tests
+    needs: [build-products-service, build-products-service-migrations, build-products-service-client]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Restore dependencies of unit tests
+        run: dotnet restore
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
+      - name: Run unit tests
+        run: dotnet test
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
+
+  integration-tests:
+    name: Run Integration Tests
+    needs: [unit-tests, gitversion]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Restore dependencies of integration tests
+        run: dotnet restore
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
+      - name: Build Product Service Docker Image
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
+      - name: Build Migrations Docker Image
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
+      - name: Run integration tests
+        run: dotnet test
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
+        env:
+          PRODUCTS_IMAGE_NAME: kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
+          MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
+          CI: true

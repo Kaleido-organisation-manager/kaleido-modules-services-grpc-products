@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Company>Kaleido Organisation Manager</Company>
+    <PackageDescription>Kaleido.Modules.Services.Grpc.Products</PackageDescription>
+    <RepositoryUrl>https://github.com/Kaleido-organisation-manager/kaleido-modules-services-grpc-products</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProtoBuf Include="..\Proto\Models\product-common.proto" GrpcServices="None" Link="Proto\Models\product-common.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-create.proto" GrpcServices="None" Link="Proto\Models\product-create.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-delete.proto" GrpcServices="None" Link="Proto\Models\product-delete.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-all-by-category-key.proto" GrpcServices="None" Link="Proto\Models\product-get-all-by-category-key.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-all-by-name-and-category-key.proto" GrpcServices="None" Link="Proto\Models\product-get-all-by-name-and-category-key.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-all-by-name.proto" GrpcServices="None" Link="Proto\Models\product-get-all-by-name.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-all.proto" GrpcServices="None" Link="Proto\Models\product-get-all.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-revision-price.proto" GrpcServices="None" Link="Proto\Models\product-get-revision-price.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-revision.proto" GrpcServices="None" Link="Proto\Models\product-get-revision.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-revisions-price.proto" GrpcServices="None" Link="Proto\Models\product-get-revisions-price.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get-revisions.proto" GrpcServices="None" Link="Proto\Models\product-get-revisions.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-get.proto" GrpcServices="None" Link="Proto\Models\product-get.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\Models\product-update.proto" GrpcServices="None" Link="Proto\Models\product-update.proto" ProtoRoot="../Proto" />
+    <ProtoBuf Include="..\Proto\product-service.proto" GrpcServices="Server" Link="Proto\product-service.proto" ProtoRoot="../Proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Migrations/*.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
+    <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.66.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
+  </ItemGroup>
+
+</Project>

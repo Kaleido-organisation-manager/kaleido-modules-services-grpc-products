@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package Kaleido.Grpc.Products;
+
+message DeleteProductRequest {
+  string key = 1;
+}
+
+message DeleteProductResponse {
+  string key = 1;
+}

@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products", "Kaleido.Modules.Services.Grpc.Products\Kaleido.Modules.Services.Grpc.Products.csproj", "{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Client", "Kaleido.Modules.Services.Grpc.Products.Client\Kaleido.Modules.Services.Grpc.Products.Client.csproj", "{2D7689A1-A741-4896-88BE-298FCBF9A640}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Migrations", "Kaleido.Modules.Services.Grpc.Products.Migrations\Kaleido.Modules.Services.Grpc.Products.Migrations.csproj", "{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Tests.Unit", "Kaleido.Modules.Services.Grpc.Products.Tests.Unit\Kaleido.Modules.Services.Grpc.Products.Tests.Unit.csproj", "{D5733916-CAE2-4EDD-B35A-8E2539F8E173}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaleido.Modules.Services.Grpc.Products.Tests.Integrations", "Kaleido.Modules.Services.Grpc.Products.Tests.Integrations\Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.csproj", "{77BB9D14-69C0-4B68-8120-387B86909E2A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CA87DE5-19A8-4D32-BB0F-ECF016225E2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D7689A1-A741-4896-88BE-298FCBF9A640}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D7689A1-A741-4896-88BE-298FCBF9A640}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D7689A1-A741-4896-88BE-298FCBF9A640}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D7689A1-A741-4896-88BE-298FCBF9A640}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F17153BE-2EAE-41A6-966A-CD4E3752ABC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5733916-CAE2-4EDD-B35A-8E2539F8E173}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77BB9D14-69C0-4B68-8120-387B86909E2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77BB9D14-69C0-4B68-8120-387B86909E2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77BB9D14-69C0-4B68-8120-387B86909E2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77BB9D14-69C0-4B68-8120-387B86909E2A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

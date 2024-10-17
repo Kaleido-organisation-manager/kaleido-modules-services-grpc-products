@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package Kaleido.Grpc.Products;
+
+import "Models/product-common.proto";
+
+message CreateProductRequest {
+  CreateProduct product = 1;
+}
+
+message CreateProductResponse {
+  Product product = 1;
+}
+
+message CreateProduct {
+  string name = 1;
+  string description = 2;
+  repeated ProductPrice prices = 3;
+  string categoryKey = 4;
+  string imageUrl = 5;
+}

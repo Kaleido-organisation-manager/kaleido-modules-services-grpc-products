@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package Kaleido.Grpc.Products;
+
+import "Models/product-common.proto";
+
+message GetAllProductsRequest {
+  // This message is intentionally left empty as it doesn't require any parameters
+}
+
+message GetAllProductsResponse {
+  repeated Product products = 1;
+}

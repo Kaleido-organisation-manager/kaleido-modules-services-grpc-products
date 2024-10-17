@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package Kaleido.Grpc.Products;
+
+import "Models/product-get.proto";
+import "Models/product-get-all.proto";
+import "Models/product-get-all-by-category-key.proto";
+import "Models/product-create.proto";
+import "Models/product-update.proto";
+import "Models/product-delete.proto";
+import "Models/product-get-revisions.proto";
+import "Models/product-get-revision.proto";
+import "Models/product-get-revisions-price.proto";
+import "Models/product-get-revision-price.proto";
+import "Models/product-get-all-by-name.proto";
+import "Models/product-get-all-by-name-and-category-key.proto";
+
+service GrpcProducts {
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse) {}
+  rpc GetAllProducts(GetAllProductsRequest) returns (GetAllProductsResponse) {}
+  rpc GetAllProductsByCategoryKey(GetAllProductsByCategoryKeyRequest) returns (GetAllProductsByCategoryKeyResponse) {}
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {}
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse) {}
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse) {}
+  rpc GetProductRevisions(GetProductRevisionsRequest) returns (GetProductRevisionsResponse) {}
+  rpc GetProductRevision(GetProductRevisionRequest) returns (GetProductRevisionResponse) {}
+  rpc GetProductPriceRevisions(GetProductPriceRevisionsRequest) returns (GetProductPriceRevisionsResponse) {}
+  rpc GetProductPriceRevision(GetProductPriceRevisionRequest) returns (GetProductPriceRevisionResponse) {}
+  rpc GetAllProductsByName(GetAllProductsByNameRequest) returns (GetAllProductsByNameResponse) {}
+  rpc GetAllProductsByNameAndCategoryKey(GetAllProductsByNameAndCategoryKeyRequest) returns (GetAllProductsByNameAndCategoryKeyResponse) {}
+}
