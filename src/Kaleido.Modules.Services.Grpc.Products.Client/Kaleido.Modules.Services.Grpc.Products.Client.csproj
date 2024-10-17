@@ -1,5 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <Company>Kaleido Organisation Manager</Company>
+    <PackageDescription>Kaleido.Modules.Services.Grpc.Products.Client</PackageDescription>
+    <RepositoryUrl>https://github.com/Kaleido-organisation-manager/kaleido-modules-services-grpc-products</RepositoryUrl>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProtoBuf Include="..\Proto\Models\product-common.proto" GrpcServices="None" Link="Proto\Models\product-common.proto" ProtoRoot="../Proto" />
     <ProtoBuf Include="..\Proto\Models\product-create.proto" GrpcServices="None" Link="Proto\Models\product-create.proto" ProtoRoot="../Proto" />

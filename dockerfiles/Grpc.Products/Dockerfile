@@ -18,6 +18,9 @@ RUN dotnet publish Kaleido.Modules.Services.Grpc.Products -c Release -o out
 # Build the runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
+LABEL org.opencontainers.image.source=https://github.com/Kaleido-organisation-manager/kaleido-modules-services-grpc-products
+LABEL org.opencontainers.image.description="Container image for the Kaleido Modules Services Grpc Products"
+
 ENV "Kestrel:EndpointDefaults:Protocols"="Http2"
 
 WORKDIR /app

@@ -7,6 +7,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Company>Kaleido Organisation Manager</Company>
+    <PackageDescription>Kaleido.Modules.Services.Grpc.Products.Migrations</PackageDescription>
+    <RepositoryUrl>https://github.com/Kaleido-organisation-manager/kaleido-modules-services-grpc-products</RepositoryUrl>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Kaleido.Modules.Services.Grpc.Products\Kaleido.Modules.Services.Grpc.Products.csproj" />
   </ItemGroup>

@@ -6,12 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- <Content Include="..\Proto\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Proto\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content> -->
-  </ItemGroup>
+  <PropertyGroup>
+    <Company>Kaleido Organisation Manager</Company>
+    <PackageDescription>Kaleido.Modules.Services.Grpc.Products</PackageDescription>
+    <RepositoryUrl>https://github.com/Kaleido-organisation-manager/kaleido-modules-services-grpc-products</RepositoryUrl>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProtoBuf Include="..\Proto\Models\product-common.proto" GrpcServices="None" Link="Proto\Models\product-common.proto" ProtoRoot="../Proto" />
