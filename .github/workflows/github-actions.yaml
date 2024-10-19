@@ -98,7 +98,7 @@ jobs:
   create-service-release:
     name: Create Dotnet Release for service
     runs-on: ubuntu-latest
-    needs: [unit-tests, gitversion]
+    needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
     permissions:
       packages: read
     steps:
@@ -109,19 +109,19 @@ jobs:
       - name: Restore dependencies of service
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
-      - name: Create Dotnet Release
-        run: dotnet release create --output $GITHUB_WORKSPACE/service/out --version ${{ needs.gitversion.outputs.version }}
+      - name: Build service Release
+        run: dotnet build -c Release
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
           name: products-service
-          path: $GITHUB_WORKSPACE/service/out
+          path: src/Kaleido.Modules.Services.Grpc.Products/bin/Release/net8.0
 
   create-migrations-release:
     name: Create Dotnet Release for migrations
     runs-on: ubuntu-latest
-    needs: [unit-tests, gitversion]
+    needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
     permissions:
       packages: read
     steps:
@@ -132,14 +132,14 @@ jobs:
       - name: Restore dependencies of migrations
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
-      - name: Create Dotnet Release
-        run: dotnet release create --output $GITHUB_WORKSPACE/migrations/out --version ${{ needs.gitversion.outputs.version }}
+      - name: Build migrations
+        run: dotnet build -c Release
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
           name: products-service-migrations
-          path: $GITHUB_WORKSPACE/migrations/out
+          path: src/Kaleido.Modules.Services.Grpc.Products.Migrations/bin/Release/net8.0
 
   integration-tests:
     name: Run Integration Tests
@@ -159,16 +159,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: products-service
-          path: $GITHUB_WORKSPACE/service/out
+          path: service/out
       - name: Download Migrations Release Artifact
         uses: actions/download-artifact@v4
         with:
           name: products-service-migrations
-          path: $GITHUB_WORKSPACE/migrations/out
+          path: migrations/out
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg BUILD_DIR=$GITHUB_WORKSPACE/service/out
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=service/out
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg BUILD_DIR=$GITHUB_WORKSPACE/migrations/out
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=migrations/out
       - name: Run integration tests
         run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
@@ -182,7 +182,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: [integration-tests, gitversion]
+    needs: [integration-tests, unit-tests, gitversion]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -205,9 +205,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: products-service
-          path: $GITHUB_WORKSPACE/service/out
+          path: service/out
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg BUILD_DIR=$GITHUB_WORKSPACE/service/out
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=service/out
       - name: Docker login
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Publish Product Service Docker Image
@@ -226,9 +226,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: products-service-migrations
-          path: $GITHUB_WORKSPACE/migrations/out
+          path: migrations/out
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg BUILD_DIR=$GITHUB_WORKSPACE/migrations/out
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=migrations/out
       - name: Docker login
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Publish Migrations Docker Image
@@ -255,7 +255,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: products-service-client
-          path: $GITHUB_WORKSPACE/client/out
+          path: client/out
 
 
   publish-client-package:
@@ -271,8 +271,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: products-service-client
-          path: $GITHUB_WORKSPACE/client/out
+          path: client/out
       - name: Publish Client Package
-        run: dotnet nuget push $GITHUB_WORKSPACE/client/out/Kaleido.Modules.Services.Grpc.Products.Client.${{ needs.gitversion.outputs.version }}.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
+        run: dotnet nuget push client/out/Kaleido.Modules.Services.Grpc.Products.Client.${{ needs.gitversion.outputs.version }}.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
 
       
