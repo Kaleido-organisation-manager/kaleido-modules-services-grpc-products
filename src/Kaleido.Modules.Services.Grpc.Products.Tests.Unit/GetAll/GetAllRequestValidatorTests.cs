@@ -1,5 +1,4 @@
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Models.Validations;
 using Kaleido.Modules.Services.Grpc.Products.GetAll;
 using Moq;
 

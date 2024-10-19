@@ -1,5 +1,5 @@
+using Kaleido.Common.Services.Grpc.Models.Validations;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Models.Validations;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
 
@@ -43,6 +43,7 @@ public class ProductValidator : IProductValidator
         var keyValidationResult = ValidateKeyFormat(product.Key);
         if (!keyValidationResult.IsValid)
         {
+            keyValidationResult.PrependPath([nameof(Product)]);
             validationResult.Merge(keyValidationResult);
         }
 
@@ -62,13 +63,14 @@ public class ProductValidator : IProductValidator
         var commonKeyValidationResult = ValidateCommonRulesForProductKey(productKey, out var guid);
         if (!commonKeyValidationResult.IsValid)
         {
+            commonKeyValidationResult.PrependPath([nameof(Product)]);
             validationResult.Merge(commonKeyValidationResult);
         }
 
         var existingProduct = await _productsRepository.GetActiveAsync(guid, cancellationToken);
         if (existingProduct == null)
         {
-            validationResult.AddNotFoundError([nameof(Product), nameof(productKey)], "Product not found");
+            validationResult.AddNotFoundError([nameof(Product.Key)], "Product not found");
         }
 
         return validationResult;
@@ -80,12 +82,12 @@ public class ProductValidator : IProductValidator
 
         if (string.IsNullOrEmpty(categoryKey))
         {
-            validationResult.AddRequiredError([nameof(Product), nameof(categoryKey)], "Product CategoryKey is required");
+            validationResult.AddRequiredError([nameof(Product.CategoryKey)], "Product CategoryKey is required");
         }
 
         if (!Guid.TryParse(categoryKey, out var guid))
         {
-            validationResult.AddInvalidFormatError([nameof(Product), nameof(categoryKey)], "Product CategoryKey is not a valid GUID");
+            validationResult.AddInvalidFormatError([nameof(Product.CategoryKey)], "Product CategoryKey is not a valid GUID");
         }
 
         // TODO: Check if category exists using the category service
@@ -107,12 +109,12 @@ public class ProductValidator : IProductValidator
 
         if (string.IsNullOrEmpty(productKey))
         {
-            validationResult.AddRequiredError([nameof(Product), nameof(productKey)], "Product Key is required");
+            validationResult.AddRequiredError([nameof(Product.Key)], "Product Key is required");
         }
 
         if (!Guid.TryParse(productKey, out guid))
         {
-            validationResult.AddInvalidFormatError([nameof(Product), nameof(productKey)], "Product Key is not a valid GUID");
+            validationResult.AddInvalidFormatError([nameof(Product.Key)], "Product Key is not a valid GUID");
         }
 
         return validationResult;
@@ -136,6 +138,7 @@ public class ProductValidator : IProductValidator
         var categoryValidationResult = await ValidateCategoryKeyAsync(product.CategoryKey, cancellationToken);
         if (!categoryValidationResult.IsValid)
         {
+            categoryValidationResult.PrependPath([nameof(Product)]);
             validationResult.Merge(categoryValidationResult);
         }
 

@@ -1,9 +1,9 @@
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Configuration;
-using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Microsoft.EntityFrameworkCore;
-using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
+using Kaleido.Common.Services.Grpc.Repositories;
+using Kaleido.Common.Services.Grpc.Constants;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Common.Repositories;
 

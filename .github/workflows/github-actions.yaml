@@ -13,7 +13,7 @@ jobs:
     name: GitVersion
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.Semver.outputs.MajorMinorPatch }}
+      version: ${{ steps.Semver.outputs.FullSemVer }}
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
@@ -23,28 +23,17 @@ jobs:
       - id: Semver
         uses: gittools/actions/gitversion/execute@v3.0.0
 
-  git-tag-release:
-    name: Git Tag Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    needs: gitversion
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-      - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@v1 # Don't use @master or @v1 unless you're happy to test the latest version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
-          CUSTOM_TAG: ${{ needs.gitversion.outputs.MajorMinorPatch }}
-
   build-products-service:
     name: Build Products Service
-    needs: git-tag-release
+    needs: gitversion
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
       - name: Restore dependencies of products service
         run: dotnet restore 
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
@@ -54,11 +43,15 @@ jobs:
 
   build-products-service-migrations:
     name: Build Products Service Migrations
-    needs: git-tag-release
+    needs: gitversion
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
       - name: Restore dependencies of products service migrations
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
@@ -68,11 +61,15 @@ jobs:
 
   build-products-service-client:
     name: Build Products Service Client
-    needs: git-tag-release
+    needs: gitversion
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
       - name: Restore dependencies of products service client
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
@@ -84,9 +81,13 @@ jobs:
     name: Run Unit Tests
     needs: [build-products-service, build-products-service-migrations, build-products-service-client]
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
       - name: Restore dependencies of unit tests
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
@@ -94,20 +95,80 @@ jobs:
         run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Unit
 
-  integration-tests:
-    name: Run Integration Tests
-    needs: [unit-tests, gitversion]
+  create-service-release:
+    name: Create Dotnet Release for service
     runs-on: ubuntu-latest
+    needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
+    permissions:
+      packages: read
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
+      - name: Restore dependencies of service
+        run: dotnet restore
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products
+      - name: Build service Release
+        run: dotnet build -c Release
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products
+      - name: Upload Dotnet Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: products-service
+          path: src/Kaleido.Modules.Services.Grpc.Products/bin/Release/net8.0
+
+  create-migrations-release:
+    name: Create Dotnet Release for migrations
+    runs-on: ubuntu-latest
+    needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
+    permissions:
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
+      - name: Restore dependencies of migrations
+        run: dotnet restore
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
+      - name: Build migrations
+        run: dotnet build -c Release
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
+      - name: Upload Dotnet Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: products-service-migrations
+          path: src/Kaleido.Modules.Services.Grpc.Products.Migrations/bin/Release/net8.0
+
+  integration-tests:
+    name: Run Integration Tests
+    needs: [create-service-release, create-migrations-release, gitversion]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
       - name: Restore dependencies of integration tests
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
+      - name: Download Service Release Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: products-service
+          path: service/out
+      - name: Download Migrations Release Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: products-service-migrations
+          path: migrations/out
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=service/out
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=migrations/out
       - name: Run integration tests
         run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
@@ -116,17 +177,37 @@ jobs:
           MIGRATIONS_IMAGE_NAME: kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
           CI: true
 
+  git-tag-release:
+    name: Git Tag Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [integration-tests, unit-tests, gitversion]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@v1 # Don't use @master or @v1 unless you're happy to test the latest version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
+          CUSTOM_TAG: ${{ needs.gitversion.outputs.version }}
+
   build-and-push-products-docker-image:
     name: Publish Docker Images
-    needs: [integration-tests, gitversion]
+    needs: [git-tag-release, gitversion, create-service-release]
     runs-on: ubuntu-latest
     permissions:
       packages: write
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
+      - name: Download Service Release Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: products-service
+          path: service/out
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=service/out
       - name: Docker login
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Publish Product Service Docker Image
@@ -134,38 +215,64 @@ jobs:
 
   build-and-push-migrations-docker-image:
     name: Build and Push Docker Images
-    needs: [integration-tests, gitversion]
+    needs: [git-tag-release, gitversion, create-migrations-release]
     runs-on: ubuntu-latest
     permissions:
       packages: write
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
+      - name: Download Migrations Release Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: products-service-migrations
+          path: migrations/out
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=migrations/out
       - name: Docker login
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Publish Migrations Docker Image
         run: docker push ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }}
 
-  build-and-publish-client-package:
-    name: Build and Publish Client Package
-    needs: [integration-tests, gitversion]
+  create-client-release:
+    name: Create Dotnet Release for client
+    runs-on: ubuntu-latest
+    needs: [git-tag-release, gitversion]
+    permissions:
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repository
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
+      - name: Restore dependencies of client
+        run: dotnet restore
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
+      - name: Pack dotnet package
+        run: dotnet pack --configuration Release /p:Version=${{ needs.gitversion.outputs.version }} -o $GITHUB_WORKSPACE/client/out
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
+      - name: Upload Dotnet Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: products-service-client
+          path: client/out
+
+
+  publish-client-package:
+    name: Publish Client Package
+    needs: [create-client-release, gitversion]
     runs-on: ubuntu-latest
     permissions:
       packages: write
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repository
-      - name: Add github source
-        run: dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-      - name: Pack Client Package
-        run: dotnet pack --configuration Release /p:Version=${{ needs.gitversion.outputs.version }}
-        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
+      - name: Download Client Release Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: products-service-client
+          path: client/out
       - name: Publish Client Package
-        run: dotnet nuget push "bin/Release/Kaleido.Modules.Services.Grpc.Products.Client.${{ needs.gitversion.outputs.version }}.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
-        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Client
-        env:
-          VERSION: ${{ needs.gitversion.outputs.version }}
+        run: dotnet nuget push client/out/Kaleido.Modules.Services.Grpc.Products.Client.${{ needs.gitversion.outputs.version }}.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
 
       

@@ -1,6 +1,6 @@
-using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
+using Kaleido.Common.Services.Grpc.Validators;
+using Kaleido.Common.Services.Grpc.Models.Validations;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Models.Validations;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetAllByName;
 

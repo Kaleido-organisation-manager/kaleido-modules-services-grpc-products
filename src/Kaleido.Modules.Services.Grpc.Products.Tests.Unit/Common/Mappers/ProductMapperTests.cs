@@ -1,7 +1,7 @@
-using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Grpc.Products;
+using Kaleido.Common.Services.Grpc.Constants;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Unit.Common.Mappers;
 public class ProductMapperTests

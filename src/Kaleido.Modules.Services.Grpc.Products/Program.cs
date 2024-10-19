@@ -1,6 +1,6 @@
 using Kaleido.Modules.Services.Grpc.Products.Common.Configuration;
-using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
-using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
+using Kaleido.Common.Services.Grpc.Handlers;
+using Kaleido.Common.Services.Grpc.Validators;
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories;
@@ -21,6 +21,7 @@ using Kaleido.Modules.Services.Grpc.Products.GetProductPriceRevisions;
 using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.GetAllByName;
 using Kaleido.Modules.Services.Grpc.Products.GetAllByNameAndCategoryKey;
+using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
 
 
 var builder = WebApplication.CreateBuilder(args);
