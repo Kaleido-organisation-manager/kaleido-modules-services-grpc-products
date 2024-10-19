@@ -153,16 +153,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: products-service
-          path: $GITHUB_WORKSPACE/service/out
+          path: service/out
       - name: Download Migrations Release Artifact
         uses: actions/download-artifact@v4
         with:
           name: products-service-migrations
-          path: $GITHUB_WORKSPACE/migrations/out
+          path: migrations/out
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=$GITHUB_WORKSPACE/service/out
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=service/out
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=$GITHUB_WORKSPACE/migrations/out
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=migrations/out
       - name: Run integration tests
         run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
