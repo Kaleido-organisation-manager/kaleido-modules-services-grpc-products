@@ -105,6 +105,7 @@ jobs:
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Create Dotnet Release
         run: dotnet release create --output $GITHUB_WORKSPACE/service/out --version ${{ needs.gitversion.outputs.version }}
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -127,6 +128,7 @@ jobs:
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Create Dotnet Release
         run: dotnet release create --output $GITHUB_WORKSPACE/migrations/out --version ${{ needs.gitversion.outputs.version }}
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
