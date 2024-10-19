@@ -103,17 +103,14 @@ jobs:
       - name: Restore dependencies of service
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
-      - name: Build service
+      - name: Build service Release
         run: dotnet build -c Release
-        working-directory: src/Kaleido.Modules.Services.Grpc.Products
-      - name: Create Dotnet Release
-        run: dotnet publish --no-build -o out --version ${{ needs.gitversion.outputs.version }}
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
           name: products-service
-          path: src/Kaleido.Modules.Services.Grpc.Products/out
+          path: src/Kaleido.Modules.Services.Grpc.Products/bin/Release/net8.0
 
   create-migrations-release:
     name: Create Dotnet Release for migrations
@@ -132,14 +129,11 @@ jobs:
       - name: Build migrations
         run: dotnet build -c Release
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
-      - name: Create Dotnet Release
-        run: dotnet publish --no-build -o out --version ${{ needs.gitversion.outputs.version }}
-        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
           name: products-service-migrations
-          path: src/Kaleido.Modules.Services.Grpc.Products.Migrations/out
+          path: src/Kaleido.Modules.Services.Grpc.Products.Migrations/bin/Release/net8.0
 
   integration-tests:
     name: Run Integration Tests
