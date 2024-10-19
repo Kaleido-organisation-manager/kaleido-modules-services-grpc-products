@@ -103,8 +103,11 @@ jobs:
       - name: Restore dependencies of service
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
+      - name: Build service
+        run: dotnet build -c Release
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Create Dotnet Release
-        run: dotnet publish -c Release -o out --version ${{ needs.gitversion.outputs.version }}
+        run: dotnet publish --no-build -o out --version ${{ needs.gitversion.outputs.version }}
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
@@ -126,8 +129,11 @@ jobs:
       - name: Restore dependencies of migrations
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
+      - name: Build migrations
+        run: dotnet build -c Release
+        working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Create Dotnet Release
-        run: dotnet publish -c Release -o out --version ${{ needs.gitversion.outputs.version }}
+        run: dotnet publish --no-build -o out --version ${{ needs.gitversion.outputs.version }}
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
