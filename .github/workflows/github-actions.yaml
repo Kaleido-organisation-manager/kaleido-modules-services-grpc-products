@@ -193,7 +193,7 @@ jobs:
           CUSTOM_TAG: ${{ needs.gitversion.outputs.version }}
 
   build-and-push-products-docker-image:
-    name: Publish Docker Images
+    name: Build and Push Products Service Docker Image
     needs: [git-tag-release, gitversion, create-service-release]
     runs-on: ubuntu-latest
     permissions:
@@ -214,7 +214,7 @@ jobs:
         run: docker push ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
 
   build-and-push-migrations-docker-image:
-    name: Build and Push Docker Images
+    name: Build and Push Migrations Docker Image
     needs: [git-tag-release, gitversion, create-migrations-release]
     runs-on: ubuntu-latest
     permissions:
@@ -272,6 +272,8 @@ jobs:
         with:
           name: products-service-client
           path: client/out
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
       - name: Publish Client Package
         run: dotnet nuget push client/out/Kaleido.Modules.Services.Grpc.Products.Client.${{ needs.gitversion.outputs.version }}.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
 
