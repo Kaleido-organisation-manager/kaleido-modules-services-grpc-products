@@ -104,13 +104,13 @@ jobs:
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Create Dotnet Release
-        run: dotnet release create --output $GITHUB_WORKSPACE/service/out --version ${{ needs.gitversion.outputs.version }}
+        run: dotnet publish -c Release -o out --version ${{ needs.gitversion.outputs.version }}
         working-directory: src/Kaleido.Modules.Services.Grpc.Products
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
           name: products-service
-          path: $GITHUB_WORKSPACE/service/out
+          path: out
 
   create-migrations-release:
     name: Create Dotnet Release for migrations
@@ -127,13 +127,13 @@ jobs:
         run: dotnet restore
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Create Dotnet Release
-        run: dotnet release create --output $GITHUB_WORKSPACE/migrations/out --version ${{ needs.gitversion.outputs.version }}
+        run: dotnet publish -c Release -o out --version ${{ needs.gitversion.outputs.version }}
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Migrations
       - name: Upload Dotnet Release Artifact
         uses: actions/upload-artifact@v4
         with:
           name: products-service-migrations
-          path: $GITHUB_WORKSPACE/migrations/out
+          path: out
 
   integration-tests:
     name: Run Integration Tests
