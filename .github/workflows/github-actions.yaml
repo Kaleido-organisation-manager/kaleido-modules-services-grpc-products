@@ -272,6 +272,8 @@ jobs:
         with:
           name: products-service-client
           path: client/out
+      - name: Add Github nugetfeed
+        run: dotnet nuget add source --username DriesDelanghe --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
       - name: Publish Client Package
         run: dotnet nuget push client/out/Kaleido.Modules.Services.Grpc.Products.Client.${{ needs.gitversion.outputs.version }}.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
 
