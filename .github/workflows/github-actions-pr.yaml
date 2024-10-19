@@ -92,7 +92,7 @@ jobs:
   create-service-release:
     name: Create Dotnet Release for service
     runs-on: ubuntu-latest
-    needs: [unit-tests, gitversion]
+    needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
     permissions:
       packages: read
     steps:
@@ -115,7 +115,7 @@ jobs:
   create-migrations-release:
     name: Create Dotnet Release for migrations
     runs-on: ubuntu-latest
-    needs: [unit-tests, gitversion]
+    needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
     permissions:
       packages: read
     steps:
@@ -153,16 +153,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: products-service
-          path: service/out
+          path: $GITHUB_WORKSPACE/service/out
       - name: Download Migrations Release Artifact
         uses: actions/download-artifact@v4
         with:
           name: products-service-migrations
-          path: migrations/out
+          path: $GITHUB_WORKSPACE/migrations/out
       - name: Build Product Service Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg BUILD_DIR=service/out
+        run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=$GITHUB_WORKSPACE/service/out
       - name: Build Migrations Docker Image
-        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg BUILD_DIR=migrations/out
+        run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=$GITHUB_WORKSPACE/migrations/out
       - name: Run integration tests
         run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
