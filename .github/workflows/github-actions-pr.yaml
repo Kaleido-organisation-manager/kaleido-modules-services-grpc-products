@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: products-service
-          path: out
+          path: $GITHUB_WORKSPACE/src/Kaleido.Modules.Services.Grpc.Products/out
 
   create-migrations-release:
     name: Create Dotnet Release for migrations
@@ -133,7 +133,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: products-service-migrations
-          path: out
+          path: $GITHUB_WORKSPACE/src/Kaleido.Modules.Services.Grpc.Products.Migrations/out
 
   integration-tests:
     name: Run Integration Tests
