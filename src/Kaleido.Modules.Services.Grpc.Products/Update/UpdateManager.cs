@@ -1,9 +1,10 @@
 
-using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Grpc.Products;
+using Kaleido.Common.Services.Grpc.Constants;
+using System.Text.Json;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Update;
 
@@ -54,6 +55,8 @@ public class UpdateManager : IUpdateManager
 
         var latestStoredProductPrices = storedProductPrices.GroupBy(x => x.CurrencyKey)
             .Select(g => g.OrderByDescending(x => x.Revision).First());
+
+        _logger.LogInformation($"{JsonSerializer.Serialize(latestStoredProductPrices)}");
 
         foreach (var storedProductPrice in latestStoredProductPrices)
         {

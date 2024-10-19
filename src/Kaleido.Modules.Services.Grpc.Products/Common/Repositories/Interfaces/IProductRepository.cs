@@ -1,3 +1,4 @@
+using Kaleido.Common.Services.Grpc.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;

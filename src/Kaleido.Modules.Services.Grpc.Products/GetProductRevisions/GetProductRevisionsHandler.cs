@@ -1,8 +1,7 @@
 using Grpc.Core;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
-using Kaleido.Modules.Services.Grpc.Products.Common.Validators.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Common.Exceptions;
+using Kaleido.Common.Services.Grpc.Handlers;
+using Kaleido.Common.Services.Grpc.Validators;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetProductRevisions;
 

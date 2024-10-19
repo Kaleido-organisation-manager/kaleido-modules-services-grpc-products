@@ -5,6 +5,7 @@ using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using DotNet.Testcontainers.Networks;
 using Grpc.Net.Client;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Testcontainers.PostgreSql;
@@ -35,12 +36,19 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 
         public InfrastructureFixture()
         {
-            _isLocalDevelopment = Environment.GetEnvironmentVariable("CI") == null;
+            // Read from environment variables or appsettings.json file
+            var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+            _isLocalDevelopment = configuration.GetValue<bool?>("CI") == null;
 
             if (!_isLocalDevelopment)
             {
-                _grpcImageName = Environment.GetEnvironmentVariable("PRODUCTS_IMAGE_NAME") ?? _grpcImageName;
-                _migrationImageName = Environment.GetEnvironmentVariable("MIGRATIONS_IMAGE_NAME") ?? _migrationImageName;
+                _grpcImageName = configuration.GetValue<string>("PRODUCTS_IMAGE_NAME") ?? _grpcImageName;
+                _migrationImageName = configuration.GetValue<string>("MIGRATIONS_IMAGE_NAME") ?? _migrationImageName;
             }
 
             _postgres = new PostgreSqlBuilder()
@@ -59,19 +67,26 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures
 
             if (_isLocalDevelopment)
             {
+                var nugetUser = configuration.GetValue<string>("NUGET_USER");
+                var nugetToken = configuration.GetValue<string>("NUGET_TOKEN");
+
                 _migrationImage = new ImageFromDockerfileBuilder()
                     .WithDockerfileDirectory(Path.Join(CommonDirectoryPath.GetSolutionDirectory().DirectoryPath, "../"))
-                    .WithDockerfile("dockerfiles/Grpc.Products.Migrations/Dockerfile")
+                    .WithDockerfile("dockerfiles/Grpc.Products.Migrations/Dockerfile.local")
                     .WithName(_migrationImageName)
                     .WithLogger(new LoggerFactory().CreateLogger<ImageFromDockerfileBuilder>())
                     .WithCleanUp(false)
+                    .WithBuildArgument("NUGET_USER", nugetUser)
+                    .WithBuildArgument("NUGET_TOKEN", nugetToken)
                     .Build();
 
                 _grpcImage = new ImageFromDockerfileBuilder()
                     .WithDockerfileDirectory(Path.Join(CommonDirectoryPath.GetSolutionDirectory().DirectoryPath, "../"))
-                    .WithDockerfile("dockerfiles/Grpc.Products/Dockerfile")
+                    .WithDockerfile("dockerfiles/Grpc.Products/Dockerfile.local")
                     .WithName(_grpcImageName)
                     .WithLogger(new LoggerFactory().CreateLogger<ImageFromDockerfileBuilder>())
+                    .WithBuildArgument("NUGET_USER", nugetUser)
+                    .WithBuildArgument("NUGET_TOKEN", nugetToken)
                     .WithCleanUp(false)
                     .Build();
             }

@@ -4,12 +4,16 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 # Set the working directory in the container
 WORKDIR /app
 
+ARG NUGET_TOKEN
+ARG NUGET_USER
+
 # Copy the source code and build the application
 COPY ./src/Kaleido.Modules.Services.Grpc.Products.Migrations ./Kaleido.Modules.Services.Grpc.Products.Migrations
 COPY ./src/Kaleido.Modules.Services.Grpc.Products ./Kaleido.Modules.Services.Grpc.Products
 COPY ./src/Proto ./Proto
 
 # Restore the dependencies
+RUN dotnet nuget add source --username ${NUGET_USER} --password ${NUGET_TOKEN} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Kaleido-organisation-manager/index.json"
 RUN dotnet restore Kaleido.Modules.Services.Grpc.Products.Migrations
 RUN dotnet restore Kaleido.Modules.Services.Grpc.Products
 

@@ -1,5 +1,5 @@
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
+using Kaleido.Common.Services.Grpc.Constants;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Grpc.Products;
 

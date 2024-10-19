@@ -1,6 +1,6 @@
 using Grpc.Core;
+using Kaleido.Common.Services.Grpc.Handlers;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Common.Services;
 

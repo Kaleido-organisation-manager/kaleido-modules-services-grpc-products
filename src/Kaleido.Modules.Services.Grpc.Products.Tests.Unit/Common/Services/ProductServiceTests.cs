@@ -3,9 +3,9 @@ using Moq.AutoMock;
 using Grpc.Core;
 using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Services;
-using Kaleido.Modules.Services.Grpc.Products.Common.Handlers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Kaleido.Common.Services.Grpc.Handlers;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Unit.Common.Services;
 
@@ -212,6 +212,43 @@ public class ProductsServiceTests
 
         // Assert
         _mocker.GetMock<IBaseHandler<GetProductPriceRevisionRequest, GetProductPriceRevisionResponse>>()
+            .Verify(h => h.HandleAsync(request, context.CancellationToken), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllProductsByName_ShouldCallCorrectHandler()
+    {
+        // Arrange
+        var request = new GetAllProductsByNameRequest()
+        {
+            Name = "Test Product"
+        };
+        var context = TestServerCallContext.Create();
+
+        // Act
+        await _productsService.GetAllProductsByName(request, context);
+
+        // Assert
+        _mocker.GetMock<IBaseHandler<GetAllProductsByNameRequest, GetAllProductsByNameResponse>>()
+            .Verify(h => h.HandleAsync(request, context.CancellationToken), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllProductsByNameAndCategoryKey_ShouldCallCorrectHandler()
+    {
+        // Arrange
+        var request = new GetAllProductsByNameAndCategoryKeyRequest()
+        {
+            Name = "Test Product",
+            CategoryKey = Guid.NewGuid().ToString()
+        };
+        var context = TestServerCallContext.Create();
+
+        // Act
+        await _productsService.GetAllProductsByNameAndCategoryKey(request, context);
+
+        // Assert
+        _mocker.GetMock<IBaseHandler<GetAllProductsByNameAndCategoryKeyRequest, GetAllProductsByNameAndCategoryKeyResponse>>()
             .Verify(h => h.HandleAsync(request, context.CancellationToken), Times.Once);
     }
 }
