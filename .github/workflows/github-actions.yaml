@@ -193,7 +193,7 @@ jobs:
           CUSTOM_TAG: ${{ needs.gitversion.outputs.version }}
 
   build-and-push-products-docker-image:
-    name: Publish Docker Images
+    name: Build and Push Products Service Docker Image
     needs: [git-tag-release, gitversion, create-service-release]
     runs-on: ubuntu-latest
     permissions:
@@ -214,7 +214,7 @@ jobs:
         run: docker push ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }}
 
   build-and-push-migrations-docker-image:
-    name: Build and Push Docker Images
+    name: Build and Push Products Migrations Docker Image
     needs: [git-tag-release, gitversion, create-migrations-release]
     runs-on: ubuntu-latest
     permissions:
