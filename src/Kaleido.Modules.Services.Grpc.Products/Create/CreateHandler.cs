@@ -1,47 +1,54 @@
+using AutoMapper;
+using FluentValidation;
 using Grpc.Core;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Grpc.Products;
-using Kaleido.Common.Services.Grpc.Handlers;
-using Kaleido.Common.Services.Grpc.Validators;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Create;
 
-public class CreateHandler : IBaseHandler<CreateProductRequest, CreateProductResponse>
+public class CreateHandler : ICreateHandler
 {
-    private readonly ICreateManager _createProductManager;
+    private readonly ICreateManager _createManager;
     private readonly ILogger<CreateHandler> _logger;
-
-    public IRequestValidator<CreateProductRequest> Validator { get; }
+    private readonly IMapper _mapper;
+    private readonly ProductValidator _productValidator;
 
     public CreateHandler(
-        ICreateManager createProductManager,
+        ICreateManager createManager,
         ILogger<CreateHandler> logger,
-        IRequestValidator<CreateProductRequest> validator
-        )
+        IMapper mapper,
+        ProductValidator productValidator)
     {
-        _createProductManager = createProductManager;
+        _createManager = createManager;
         _logger = logger;
-        Validator = validator;
+        _mapper = mapper;
+        _productValidator = productValidator;
     }
 
-    public async Task<CreateProductResponse> HandleAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<ProductResponse> HandleAsync(Product request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Handling CreateProduct request for name: {Name}", request.Product.Name);
-
-        var validationResult = await Validator.ValidateAsync(request, cancellationToken);
-        validationResult.ThrowIfInvalid();
-
         try
         {
-            var storedProduct = await _createProductManager.CreateAsync(request.Product, cancellationToken);
-            return new CreateProductResponse
-            {
-                Product = storedProduct
-            };
+            await _productValidator.ValidateAndThrowAsync(request, cancellationToken);
+            var product = _mapper.Map<ProductEntity>(request);
+
+            var managerResponse = await _createManager.CreateAsync(product, request.Prices, cancellationToken);
+
+            var productResult = _mapper.Map<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>(managerResponse.Product);
+            productResult.Entity.Prices = managerResponse.ProductPrices;
+
+            var response = _mapper.Map<ProductResponse>(productResult);
+            return response;
         }
-        catch (Exception ex)
+        catch (ValidationException e)
         {
-            _logger.LogError(ex, "An error occurred while creating product with name: {Name}", request.Product.Name);
-            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, e.Message, e));
+        }
+        catch (Exception e)
+        {
+            throw new RpcException(new Status(StatusCode.Internal, e.Message, e));
         }
     }
 }

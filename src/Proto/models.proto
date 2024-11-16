@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package Kaleido.Grpc.Products;
+
+import "google/protobuf/timestamp.proto";
+
+message Product {
+  string name = 1;
+  string description = 2;
+  string categoryKey = 3;
+  string imageUrl = 4;
+  repeated ProductPrice prices = 5;
+}
+
+message ProductPrice {
+  string currencyKey = 1;
+  float value = 2;
+}
+
+message ProductRequest {
+  string key = 1;
+}
+
+message ProductActionRequest {
+  string key = 1;
+  Product product = 2;
+}
+
+message EmptyRequest {}
+
+message BaseRevision {
+    string key = 1;
+    int32 revision = 2;
+    string action = 3;
+    google.protobuf.Timestamp createdAt = 4;
+}
+
+message ProductResponse {
+    string key = 1;
+    ProductWithPricesResponse product = 2;
+    BaseRevision revision = 3;
+}
+
+message ProductWithPricesResponse {
+  string key = 1;
+  string name = 2;
+  string description = 3;
+  string categoryKey = 4;
+  string imageUrl = 5;
+  repeated ProductPriceResponse prices = 6;
+}
+
+message ProductPriceResponse {
+  ProductPrice price = 1;
+  BaseRevision revision = 2;
+}
+
+message ProductListResponse {
+  repeated ProductResponse products = 1;
+}
+
+message ProductByNameRequest {
+  string name = 1;
+}
+
+message ProductByCategoryRequest {
+  string categoryKey = 1;
+}
+
+message ProductByCategoryAndNameRequest {
+  string categoryKey = 1;
+  string name = 2;
+}
+
+message ProductRevisionRequest {
+  string key = 1;
+  google.protobuf.Timestamp createdAt = 2;
+}
