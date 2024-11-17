@@ -37,7 +37,7 @@ public class CreateHandler : ICreateHandler
             var managerResponse = await _createManager.CreateAsync(product, request.Prices, cancellationToken);
 
             var productResult = _mapper.Map<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>(managerResponse.Product);
-            productResult.Entity.Prices = managerResponse.ProductPrices;
+            productResult.Entity.Prices = managerResponse.ProductPrices ?? [];
 
             var response = _mapper.Map<ProductResponse>(productResult);
             return response;

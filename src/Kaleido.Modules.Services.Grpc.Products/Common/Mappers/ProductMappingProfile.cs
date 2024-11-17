@@ -11,16 +11,11 @@ public class ProductMappingProfile : Profile
     public ProductMappingProfile()
     {
         // Basic entity mappings
-        CreateMap<Product, ProductEntity>();
-        CreateMap<ProductEntity, ProductWithPrices>();
-        CreateMap<ProductPrice, ProductPriceEntity>();
-
-        // Entity mappings
-        CreateMap<EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>, EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>();
-        CreateMap<IEnumerable<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>, EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>()
-            .ForPath(dest => dest.Entity.Prices, opt => opt.MapFrom(src => src));
-
-        CreateMap<ProductEntity, ProductWithPrices>();
+        CreateMap<Product, ProductEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForSourceMember(src => src.Prices, opt => opt.DoNotValidate());
+        CreateMap<ProductEntity, ProductWithPrices>()
+            .ForMember(dest => dest.Prices, opt => opt.Ignore()); // Or map from appropriate source
 
         // Response mappings
         CreateMap<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>, ProductResponse>()
@@ -46,8 +41,6 @@ public class ProductMappingProfile : Profile
         CreateMap<EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>, EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>()
             .ForMember(dest => dest.Entity, opt => opt.MapFrom(src => src.Entity))
             .ForMember(dest => dest.Revision, opt => opt.MapFrom(src => src.Revision));
-        CreateMap<ProductEntity, ProductWithPrices>()
-            .ForMember(dest => dest.Prices, opt => opt.Ignore()); // Or map from appropriate source
 
         // Self mappings for entity lifecycle results
         CreateMap<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>, EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>()

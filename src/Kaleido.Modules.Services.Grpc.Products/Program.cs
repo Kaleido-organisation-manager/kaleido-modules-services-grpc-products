@@ -8,6 +8,7 @@ using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Services;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 using Kaleido.Modules.Services.Grpc.Products.Create;
+using Kaleido.Modules.Services.Grpc.Products.Delete;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,6 +53,10 @@ builder.Services.AddLifeCycleHandler<ProductPriceEntity, ProductPriceRevisionEnt
 // Create
 builder.Services.AddScoped<ICreateManager, CreateManager>();
 builder.Services.AddScoped<ICreateHandler, CreateHandler>();
+
+// Delete
+builder.Services.AddScoped<IDeleteManager, DeleteManager>();
+builder.Services.AddScoped<IDeleteHandler, DeleteHandler>();
 
 // Add services to the container.
 builder.Services.AddGrpc();
