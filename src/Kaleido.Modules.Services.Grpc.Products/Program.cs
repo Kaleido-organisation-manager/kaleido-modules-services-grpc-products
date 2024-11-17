@@ -9,7 +9,8 @@ using Kaleido.Modules.Services.Grpc.Products.Common.Services;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 using Kaleido.Modules.Services.Grpc.Products.Create;
 using Kaleido.Modules.Services.Grpc.Products.Delete;
-
+using Kaleido.Modules.Services.Grpc.Products.Get;
+using Kaleido.Modules.Services.Grpc.Products.GetAll;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +58,14 @@ builder.Services.AddScoped<ICreateHandler, CreateHandler>();
 // Delete
 builder.Services.AddScoped<IDeleteManager, DeleteManager>();
 builder.Services.AddScoped<IDeleteHandler, DeleteHandler>();
+
+// Get
+builder.Services.AddScoped<IGetHandler, GetHandler>();
+builder.Services.AddScoped<IGetManager, GetManager>();
+
+// GetAll
+builder.Services.AddScoped<IGetAllHandler, GetAllHandler>();
+builder.Services.AddScoped<IGetAllManager, GetAllManager>();
 
 // Add services to the container.
 builder.Services.AddGrpc();

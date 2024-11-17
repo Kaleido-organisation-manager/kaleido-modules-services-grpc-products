@@ -214,15 +214,14 @@ public class InfrastructureFixture : IDisposable
             }
         }
 
-        // TODO: Uncomment when the GetAllProductsAsync method is implemented
-        // var products = await Client.GetAllProductsAsync(new Kaleido.Grpc.Products.EmptyRequest());
-        // foreach (var product in products.Products)
-        // {
-        //     if (product.Revision.Action != "Deleted")
-        //     {
-        //         await Client.DeleteProductAsync(new ProductRequest { Key = product.Key });
-        //     }
-        // }
+        var products = await Client.GetAllProductsAsync(new Kaleido.Grpc.Products.EmptyRequest());
+        foreach (var product in products.Products)
+        {
+            if (product.Revision.Action != "Deleted")
+            {
+                await Client.DeleteProductAsync(new ProductRequest { Key = product.Key });
+            }
+        }
     }
 }
 
