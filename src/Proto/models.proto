@@ -58,15 +58,7 @@ message ProductListResponse {
   repeated ProductResponse products = 1;
 }
 
-message ProductByNameRequest {
-  string name = 1;
-}
-
-message ProductByCategoryRequest {
-  string categoryKey = 1;
-}
-
-message ProductByCategoryAndNameRequest {
+message ProductFilterRequest {
   string categoryKey = 1;
   string name = 2;
 }

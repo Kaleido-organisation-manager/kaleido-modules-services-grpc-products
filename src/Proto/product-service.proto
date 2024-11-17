@@ -12,7 +12,5 @@ service GrpcProducts {
   rpc GetProductRevisions(ProductRequest) returns (ProductListResponse) {}
   rpc GetProductRevision(ProductRevisionRequest) returns (ProductResponse) {}
   rpc GetAllProducts(EmptyRequest) returns (ProductListResponse) {}
-  rpc GetAllProductsByCategoryKey(ProductByCategoryRequest) returns (ProductListResponse) {}
-  rpc GetAllProductsByName(ProductByNameRequest) returns (ProductListResponse) {}
-  rpc GetAllProductsByCategoryKeyAndName(ProductByCategoryAndNameRequest) returns (ProductListResponse) {}
+  rpc GetAllProductsFiltered(ProductFilterRequest) returns (ProductListResponse) {}
 }

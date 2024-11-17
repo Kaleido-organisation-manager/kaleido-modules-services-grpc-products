@@ -20,16 +20,12 @@ public class GetAllManager : IGetAllManager
     public async Task<IEnumerable<ManagerResponse>> GetAllProductsAsync(CancellationToken cancellationToken)
     {
         var products = await _productLifecycleHandler.GetAllAsync(cancellationToken: cancellationToken);
+        products = products.Where(x => x.Revision.Action != RevisionAction.Deleted).ToList();
 
         var result = new List<ManagerResponse>();
 
         foreach (var product in products)
         {
-            if (product.Revision.Action == RevisionAction.Deleted)
-            {
-                continue;
-            }
-
             var prices = await _priceLifecycleHandler.FindAllAsync(
                 price => price.ProductKey == product.Key,
                 cancellationToken: cancellationToken
