@@ -13,6 +13,7 @@ using Kaleido.Modules.Services.Grpc.Products.Get;
 using Kaleido.Modules.Services.Grpc.Products.GetAll;
 using Kaleido.Modules.Services.Grpc.Products.GetAllFiltered;
 using Kaleido.Modules.Services.Grpc.Products.GetAllRevisions;
+using Kaleido.Modules.Services.Grpc.Products.GetRevision;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,6 +77,10 @@ builder.Services.AddScoped<IGetAllFilteredHandler, GetAllFilteredHandler>();
 // GetAllRevisions
 builder.Services.AddScoped<IGetAllRevisionsHandler, GetAllRevisionsHandler>();
 builder.Services.AddScoped<IGetAllRevisionsManager, GetAllRevisionsManager>();
+
+// GetRevision
+builder.Services.AddScoped<IGetRevisionHandler, GetRevisionHandler>();
+builder.Services.AddScoped<IGetRevisionManager, GetRevisionManager>();
 
 // Add services to the container.
 builder.Services.AddGrpc();
