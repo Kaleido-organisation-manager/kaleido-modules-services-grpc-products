@@ -16,6 +16,9 @@ public class ProductMappingProfile : Profile
             .ForSourceMember(src => src.Prices, opt => opt.DoNotValidate());
         CreateMap<ProductEntity, ProductWithPrices>()
             .ForMember(dest => dest.Prices, opt => opt.Ignore()); // Or map from appropriate source
+        CreateMap<ProductPrice, ProductPriceEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ProductKey, opt => opt.Ignore());
 
         // Response mappings
         CreateMap<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>, ProductResponse>()

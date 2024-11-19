@@ -7,6 +7,7 @@ using Kaleido.Modules.Services.Grpc.Products.GetAll;
 using Kaleido.Modules.Services.Grpc.Products.GetAllFiltered;
 using Kaleido.Modules.Services.Grpc.Products.GetAllRevisions;
 using Kaleido.Modules.Services.Grpc.Products.GetRevision;
+using Kaleido.Modules.Services.Grpc.Products.Update;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Common.Services;
 
@@ -19,6 +20,7 @@ public class ProductsService : GrpcProducts.GrpcProductsBase
     private readonly IGetAllFilteredHandler _getAllFilteredHandler;
     private readonly IGetAllRevisionsHandler _getAllRevisionsHandler;
     private readonly IGetRevisionHandler _getRevisionHandler;
+    private readonly IUpdateHandler _updateHandler;
 
     public ProductsService(
         ICreateHandler createHandler,
@@ -27,7 +29,8 @@ public class ProductsService : GrpcProducts.GrpcProductsBase
         IGetAllHandler getAllHandler,
         IGetAllFilteredHandler getAllFilteredHandler,
         IGetAllRevisionsHandler getAllRevisionsHandler,
-        IGetRevisionHandler getRevisionHandler)
+        IGetRevisionHandler getRevisionHandler,
+        IUpdateHandler updateHandler)
     {
         _createHandler = createHandler;
         _deleteHandler = deleteHandler;
@@ -36,6 +39,7 @@ public class ProductsService : GrpcProducts.GrpcProductsBase
         _getAllFilteredHandler = getAllFilteredHandler;
         _getAllRevisionsHandler = getAllRevisionsHandler;
         _getRevisionHandler = getRevisionHandler;
+        _updateHandler = updateHandler;
     }
 
     public override async Task<ProductResponse> CreateProduct(Product request, ServerCallContext context)
@@ -73,5 +77,10 @@ public class ProductsService : GrpcProducts.GrpcProductsBase
     public override async Task<ProductResponse> GetProductRevision(ProductRevisionRequest request, ServerCallContext context)
     {
         return await _getRevisionHandler.HandleAsync(request, context.CancellationToken);
+    }
+
+    public override async Task<ProductResponse> UpdateProduct(ProductActionRequest request, ServerCallContext context)
+    {
+        return await _updateHandler.HandleAsync(request, context.CancellationToken);
     }
 }
