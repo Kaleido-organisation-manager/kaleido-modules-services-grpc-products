@@ -1,10 +1,9 @@
+using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
-using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Create;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Moq.AutoMock;
 
@@ -14,119 +13,140 @@ public class CreateManagerTests
 {
     private readonly AutoMocker _mocker;
     private readonly CreateManager _sut;
-    private readonly ProductEntity _expectedProductEntity;
-    private readonly List<ProductPriceEntity> _expectedPriceEntities;
+    private readonly ProductEntity _testProductEntity;
+    private readonly ProductPrice[] _testProductPrices;
+    private readonly DateTime _testTimestamp;
 
     public CreateManagerTests()
     {
         _mocker = new AutoMocker();
-        _mocker.Use<ILogger<CreateManager>>(NullLogger<CreateManager>.Instance);
+        _testTimestamp = DateTime.UtcNow;
 
-        // Happy path setup
-        _expectedProductEntity = new ProductEntity { Name = "Sample Product", CategoryKey = Guid.NewGuid() };
-        _expectedPriceEntities = new List<ProductPriceEntity>() {
-            new ProductPriceEntity { CurrencyKey = Guid.NewGuid(), Price = 9.99f, ProductKey = _expectedProductEntity.Key }
+        // Setup test data
+        _testProductEntity = new ProductEntity
+        {
+            Name = "Test Product",
+            Description = "Test Description",
+            CategoryKey = Guid.NewGuid()
         };
 
-        _mocker.GetMock<IProductMapper>()
-            .Setup(x => x.ToCreateEntity(It.IsAny<Product>(), It.IsAny<int>()))
-            .Returns(_expectedProductEntity);
+        _testProductPrices = new[]
+        {
+            new ProductPrice
+            {
+                Units = 10,
+                Nanos = 0,
+                CurrencyKey = Guid.NewGuid().ToString()
+            },
+            new ProductPrice
+            {
+                Units = 15,
+                Nanos = 0,
+                CurrencyKey = Guid.NewGuid().ToString()
+            }
+        };
 
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_expectedProductEntity);
+        // Setup happy paths for product lifecycle handler
+        var productRevision = new ProductRevisionEntity
+        {
+            Key = Guid.NewGuid(),
+            CreatedAt = _testTimestamp
+        };
 
-        _mocker.GetMock<IProductMapper>()
-            .Setup(x => x.ToCreatePriceEntity(It.IsAny<Guid>(), It.IsAny<ProductPrice>(), It.IsAny<Guid?>(), It.IsAny<int>()))
-            .Returns(_expectedPriceEntities.First());
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Setup(x => x.CreateAsync(_testProductEntity, It.IsAny<ProductRevisionEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductEntity entity, ProductRevisionEntity revision, CancellationToken _) =>
+                new EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>
+                {
+                    Entity = entity,
+                    Revision = revision
+                });
 
-        _mocker.GetMock<IProductPriceRepository>()
-            .Setup(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_expectedPriceEntities);
-
-        _mocker.GetMock<IProductMapper>()
-            .Setup(x => x.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()))
-            .Returns(CreateSampleProduct());
+        // Setup happy paths for price lifecycle handler
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Setup(x => x.CreateAsync(It.IsAny<ProductPriceEntity>(), It.IsAny<ProductPriceRevisionEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProductPriceEntity entity, ProductPriceRevisionEntity revision, CancellationToken _) =>
+                new EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>
+                {
+                    Entity = entity,
+                    Revision = revision
+                });
 
         _sut = _mocker.CreateInstance<CreateManager>();
     }
 
     [Fact]
-    public async Task CreateAsync_ValidProduct_ReturnsCreatedProduct()
+    public async Task CreateAsync_WithValidInputs_ShouldCreateProductAndPrices()
     {
-        // Arrange
-        var createProduct = CreateSampleCreateProduct();
-        var expectedProduct = CreateSampleProduct();
-
         // Act
-        var result = await _sut.CreateAsync(createProduct);
+        var result = await _sut.CreateAsync(_testProductEntity, _testProductPrices);
 
         // Assert
-        Assert.NotNull(result);
-        _mocker.GetMock<IProductRepository>().Verify(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.NotNull(result.Product);
+        Assert.NotNull(result.ProductPrices);
+        Assert.Equal(_testProductEntity, result.Product.Entity);
+        Assert.Equal(_testProductPrices.Length, result.ProductPrices.Count());
+
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Verify(x => x.CreateAsync(_testProductEntity, It.IsAny<ProductRevisionEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Verify(x => x.CreateAsync(It.IsAny<ProductPriceEntity>(), It.IsAny<ProductPriceRevisionEntity>(), It.IsAny<CancellationToken>()), Times.Exactly(_testProductPrices.Length));
     }
 
     [Fact]
-    public async Task CreateAsync_EmptyPrices_CreatesProductWithoutPrices()
+    public async Task CreateAsync_ShouldSetCorrectProductKeyForPrices()
     {
-        // Arrange
-        var createProduct = CreateSampleCreateProduct();
-        createProduct.Prices.Clear();
-        var expectedProduct = CreateSampleProduct();
-        expectedProduct.Prices.Clear();
-
-        _mocker.GetMock<IProductMapper>()
-            .Setup(x => x.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()))
-            .Returns(expectedProduct);
-
         // Act
-        var result = await _sut.CreateAsync(createProduct);
+        var result = await _sut.CreateAsync(_testProductEntity, _testProductPrices);
 
         // Assert
-        Assert.Equal(expectedProduct, result);
-        _mocker.GetMock<IProductRepository>().Verify(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.CreateRangeAsync(It.IsAny<IEnumerable<ProductPriceEntity>>(), It.IsAny<CancellationToken>()), Times.Never);
+        foreach (var priceResult in result.ProductPrices ?? [])
+        {
+            Assert.NotNull(result.Product);
+            Assert.Equal(result.Product.Revision.Key, priceResult.Entity.ProductKey);
+        }
     }
 
     [Fact]
-    public async Task CreateAsync_RepositoryThrowsException_PropagatesException()
+    public async Task CreateAsync_ShouldUseConsistentTimestamp()
+    {
+        // Act
+        var result = await _sut.CreateAsync(_testProductEntity, _testProductPrices);
+
+        // Assert
+        var productTimestamp = result.Product?.Revision.CreatedAt;
+        foreach (var priceResult in result.ProductPrices ?? [])
+        {
+            Assert.Equal(productTimestamp, priceResult.Revision.CreatedAt);
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithProductCreationError_ShouldPropagateException()
     {
         // Arrange
-        var createProduct = CreateSampleCreateProduct();
-        var expectedException = new Exception("Database error");
-
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<CancellationToken>()))
+        var expectedException = new Exception("Product creation failed");
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Setup(x => x.CreateAsync(It.IsAny<ProductEntity>(), It.IsAny<ProductRevisionEntity>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() => _sut.CreateAsync(createProduct));
-        Assert.Same(expectedException, exception);
+        var exception = await Assert.ThrowsAsync<Exception>(() => _sut.CreateAsync(_testProductEntity, _testProductPrices));
+        Assert.Equal(expectedException.Message, exception.Message);
     }
 
-    private static CreateProduct CreateSampleCreateProduct()
+    [Fact]
+    public async Task CreateAsync_WithPriceCreationError_ShouldPropagateException()
     {
-        return new CreateProduct
-        {
-            CategoryKey = Guid.NewGuid().ToString(),
-            Description = "Sample Description",
-            Name = "Sample Product",
-            ImageUrl = "http://example.com/image.jpg",
-            Prices = { new ProductPrice { CurrencyKey = "USD", Value = 9.99f } }
-        };
-    }
+        // Arrange
+        var expectedException = new Exception("Price creation failed");
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Setup(x => x.CreateAsync(It.IsAny<ProductPriceEntity>(), It.IsAny<ProductPriceRevisionEntity>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expectedException);
 
-    private static Product CreateSampleProduct()
-    {
-        return new Product
-        {
-            Key = Guid.NewGuid().ToString(),
-            CategoryKey = Guid.NewGuid().ToString(),
-            Description = "Sample Description",
-            Name = "Sample Product",
-            ImageUrl = "http://example.com/image.jpg",
-            Prices = { new ProductPrice { CurrencyKey = "USD", Value = 9.99f } }
-        };
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() => _sut.CreateAsync(_testProductEntity, _testProductPrices));
+        Assert.Equal(expectedException.Message, exception.Message);
     }
 }

@@ -1,57 +1,64 @@
+using AutoMapper;
+using FluentValidation;
 using Grpc.Core;
-using Kaleido.Common.Services.Grpc.Handlers;
-using Kaleido.Common.Services.Grpc.Validators;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Grpc.Products;
+using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Delete;
 
-public class DeleteHandler : IBaseHandler<DeleteProductRequest, DeleteProductResponse>
+public class DeleteHandler : IDeleteHandler
 {
+    private readonly IDeleteManager _deleteManager;
     private readonly ILogger<DeleteHandler> _logger;
-    private readonly IDeleteManager _deleteProductManager;
-    public IRequestValidator<DeleteProductRequest> Validator { get; }
+    private readonly IMapper _mapper;
+    private readonly KeyValidator _keyValidator;
 
     public DeleteHandler(
+        IDeleteManager deleteManager,
         ILogger<DeleteHandler> logger,
-        IDeleteManager productsManager,
-        IRequestValidator<DeleteProductRequest> validator
-        )
+        IMapper mapper,
+        KeyValidator keyValidator)
     {
+        _deleteManager = deleteManager;
         _logger = logger;
-        _deleteProductManager = productsManager;
-        Validator = validator;
+        _mapper = mapper;
+        _keyValidator = keyValidator;
     }
 
-    public async Task<DeleteProductResponse> HandleAsync(DeleteProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<ProductResponse> HandleAsync(ProductRequest request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Handling DeleteProduct request for key: {Key}", request.Key);
-
-        var validationResult = await Validator.ValidateAsync(request, cancellationToken);
-        validationResult.ThrowIfInvalid();
-
-        ProductEntity? deletedEntity;
-
+        ManagerResponse? managerResult;
         try
         {
-            deletedEntity = await _deleteProductManager.DeleteAsync(request.Key, cancellationToken);
+            _keyValidator.ValidateAndThrow(request.Key);
+            var key = Guid.Parse(request.Key);
+            managerResult = await _deleteManager.DeleteAsync(key, cancellationToken);
         }
-        catch (Exception ex)
+        catch (FormatException e)
         {
-            _logger.LogError(ex, "An error occurred while deleting product with key: {Key}", request.Key);
-            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid key format", e));
+        }
+        catch (ValidationException e)
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, e.Message, e));
+        }
+        catch (Exception e)
+        {
+            throw new RpcException(new Status(StatusCode.Internal, e.Message, e));
         }
 
-        if (deletedEntity == null)
+        if (managerResult == null || managerResult.Value.State != ManagerResponseState.Success)
         {
-            throw new RpcException(new Status(StatusCode.NotFound, $"Product with key: {request.Key} not found"));
+            throw new RpcException(new Status(StatusCode.NotFound, $"Product with key {request.Key} not found"));
         }
 
-        return new DeleteProductResponse()
-        {
-            Key = request.Key
-        };
+        var productResult = _mapper.Map<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>(managerResult.Value.Product);
+        productResult.Entity.Prices = managerResult.Value.ProductPrices ?? [];
 
-
+        var response = _mapper.Map<ProductResponse>(productResult);
+        return response;
     }
 }

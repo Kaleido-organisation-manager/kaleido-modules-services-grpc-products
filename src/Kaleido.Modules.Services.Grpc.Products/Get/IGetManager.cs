@@ -1,7 +1,9 @@
-using Kaleido.Grpc.Products;
+using Kaleido.Common.Services.Grpc.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Get;
+
 public interface IGetManager
 {
-    Task<Product?> GetAsync(string key, CancellationToken cancellationToken = default);
+    Task<ManagerResponse> GetAsync(Guid key, CancellationToken cancellationToken = default);
 }

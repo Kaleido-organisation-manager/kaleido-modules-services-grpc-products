@@ -1,62 +1,59 @@
+using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Create;
 
 public class CreateManager : ICreateManager
 {
+    private readonly IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> _productLifecycleHandler;
+    private readonly IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> _productPriceLifecycleHandler;
     private readonly ILogger<CreateManager> _logger;
-    private readonly IProductMapper _productMapper;
-    private readonly IProductPriceRepository _productPriceRepository;
-    private readonly IProductRepository _productRepository;
-
 
     public CreateManager(
-                ILogger<CreateManager> logger,
-                IProductMapper productMapper,
-                IProductPriceRepository productPriceRepository,
-                IProductRepository productRepository
-        )
+        IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> productLifecycleHandler,
+        IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> productPriceLifecycleHandler,
+        ILogger<CreateManager> logger)
     {
+        _productLifecycleHandler = productLifecycleHandler;
+        _productPriceLifecycleHandler = productPriceLifecycleHandler;
         _logger = logger;
-        _productMapper = productMapper;
-        _productPriceRepository = productPriceRepository;
-        _productRepository = productRepository;
     }
 
-    public async Task<Product> CreateAsync(CreateProduct createProduct, CancellationToken cancellationToken = default)
+    public async Task<ManagerResponse> CreateAsync(ProductEntity productEntity, IEnumerable<ProductPrice> productPrices, CancellationToken cancellationToken = default)
     {
-        var priceList = createProduct.Prices.Select(price => new ProductPrice
+        var timestamp = DateTime.UtcNow;
+        var productRevision = new ProductRevisionEntity
         {
-            CurrencyKey = price.CurrencyKey,
-            Value = price.Value
-        }).ToList();
-
-        var product = new Product()
-        {
-            CategoryKey = createProduct.CategoryKey,
-            Description = createProduct.Description,
-            Key = Guid.NewGuid().ToString(),
-            Name = createProduct.Name,
-            ImageUrl = createProduct.ImageUrl,
-            Prices = { priceList }
+            Key = Guid.NewGuid(),
+            CreatedAt = timestamp
         };
 
-        _logger.LogInformation("Saving Product with key: {Key}", product.Key);
-        var productEntity = _productMapper.ToCreateEntity(product);
-        var createdProductEntity = await _productRepository.CreateAsync(productEntity, cancellationToken);
-
-
-
-        var productPriceEntities = product.Prices.Select(price => _productMapper.ToCreatePriceEntity(createdProductEntity.Key!, price)).ToList();
-        if (productPriceEntities.Any())
+        var productPricesEntities = productPrices.Select(price => new ProductPriceEntity
         {
-            await _productPriceRepository.CreateRangeAsync(productPriceEntities, cancellationToken);
+            CurrencyKey = Guid.Parse(price.CurrencyKey),
+            ProductKey = productRevision.Key,
+            Units = price.Units,
+            Nanos = price.Nanos
+        });
+
+        var resultPrices = new List<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>();
+        foreach (var productPrice in productPricesEntities)
+        {
+            var productPriceRevision = new ProductPriceRevisionEntity
+            {
+                Key = Guid.NewGuid(),
+                CreatedAt = timestamp
+            };
+
+            var result = await _productPriceLifecycleHandler.CreateAsync(productPrice, productPriceRevision, cancellationToken: cancellationToken); ;
+            resultPrices.Add(result);
         }
 
-        _logger.LogInformation("Product with key: {key} saved", product.Key);
-        var storedProduct = _productMapper.FromEntities(createdProductEntity, productPriceEntities);
-        return storedProduct;
+        var productResult = await _productLifecycleHandler.CreateAsync(productEntity, productRevision, cancellationToken: cancellationToken);
+
+
+        return new ManagerResponse(productResult, resultPrices);
     }
 }

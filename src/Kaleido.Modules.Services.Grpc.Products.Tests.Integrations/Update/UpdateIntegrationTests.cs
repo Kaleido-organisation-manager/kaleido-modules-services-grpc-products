@@ -1,132 +1,380 @@
 using Grpc.Core;
+using Kaleido.Grpc.Categories;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Builders;
 using Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Update;
 
-public class UpdateIntegrationTests : IClassFixture<InfrastructureFixture>
+[Collection("Infrastructure collection")]
+public class UpdateIntegrationTests
 {
     private readonly InfrastructureFixture _fixture;
 
     public UpdateIntegrationTests(InfrastructureFixture fixture)
     {
         _fixture = fixture;
+        _fixture.ClearDatabase().Wait();
     }
 
     [Fact]
-    public async Task Update_ShouldUpdateProduct()
+    public async Task UpdateAsync_ShouldUpdateProduct()
     {
-        var createProduct = new CreateProductBuilder().Build();
-        var createResponse = await _fixture.Client.CreateProductAsync(new CreateProductRequest { Product = createProduct });
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
 
-        var updatedProduct = new ProductBuilder()
-            .WithKey(createResponse.Product.Key)
-            .WithName("Updated Name")
-            .Build();
+        var createProduct = new Product
+        {
+            Name = "Initial Product",
+            Description = "Initial Description",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
+            }
+        };
 
-        var updateResponse = await _fixture.Client.UpdateProductAsync(new UpdateProductRequest { Key = createResponse.Product.Key, Product = updatedProduct });
+        var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
 
-        Assert.NotNull(updateResponse);
-        Assert.Equal(createResponse.Product.Key, updateResponse.Product.Key);
-        Assert.Equal("Updated Name", updateResponse.Product.Name);
+        var updateRequest = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Updated Product",
+                Description = "Updated Description",
+                CategoryKey = categoryResponse.Key,
+                Prices =
+                {
+                    new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
+                }
+            }
+        };
+
+        // Act
+        var response = await _fixture.Client.UpdateProductAsync(updateRequest);
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.Equal("Updated Product", response.Product.Name);
+        Assert.Equal("Updated Description", response.Product.Description);
+        Assert.Single(response.Product.Prices.Where(x => x.Revision.Action != "Deleted"));
+        Assert.Single(response.Product.Prices.Where(x => x.Revision.Action == "Created"));
+        Assert.Equal(19, response.Product.Prices.Where(x => x.Revision.Action == "Created").First().Price.Units);
+        Assert.Equal(99, response.Product.Prices.Where(x => x.Revision.Action == "Created").First().Price.Nanos);
     }
 
     [Fact]
-    public async Task Update_ShouldReturnNotFound_WhenProductDoesNotExist()
+    public async Task UpdateAsync_CategoryIsDeleted_ShouldThrow()
     {
-        var productKey = Guid.NewGuid().ToString();
-        var updatedProduct = new ProductBuilder()
-            .WithKey(productKey)
-            .Build();
-        var request = new UpdateProductRequest { Key = productKey, Product = updatedProduct };
-        var exception = await Assert.ThrowsAsync<RpcException>(async () => await _fixture.Client.UpdateProductAsync(request));
-        Assert.Equal(StatusCode.NotFound, exception.Status.StatusCode);
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+
+        var createProduct = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
+        };
+
+        var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
+        await _fixture.CategoriesClient.DeleteCategoryAsync(new CategoryRequest { Key = categoryResponse.Key });
+
+        var updateRequest = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Updated Product",
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
+            }
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RpcException>(
+            async () => await _fixture.Client.UpdateProductAsync(updateRequest));
+        Assert.Equal(StatusCode.InvalidArgument, exception.StatusCode);
     }
 
     [Fact]
-    public async Task Update_ShouldStartNewRevisionTree_WhenCurrencyKeyIsChanged()
+    public async Task UpdateAsync_PriceIsRemoved_ShouldMarkAsDeleted()
     {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+
+        var currencyKeys = new[]
+        {
+            Guid.NewGuid().ToString(),
+            Guid.NewGuid().ToString()
+        };
+
+        var createProduct = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKeys[0] },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = currencyKeys[1] }
+            }
+        };
+
+        var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
+
+        var updateRequest = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Test Product",
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKeys[0] } }
+            }
+        };
+
+        // Act
+        var response = await _fixture.Client.UpdateProductAsync(updateRequest);
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.Equal(2, response.Product.Prices.Count);
+        Assert.Single(response.Product.Prices.Where(x => x.Revision.Action == "Unmodified"));
+        Assert.Equal(currencyKeys[0], response.Product.Prices.Where(x => x.Revision.Action == "Unmodified").First().Price.CurrencyKey);
+        Assert.Equal("Deleted", response.Product.Prices.FirstOrDefault(x => x.Price.CurrencyKey == currencyKeys[1])?.Revision.Action);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenPriceIsRestored_ShouldBeMarkedAsRestored()
+    {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+        var firstCurrencyKey = Guid.NewGuid().ToString();
+        var secondCurrencyKey = Guid.NewGuid().ToString();
+
+        var createProduct = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = firstCurrencyKey },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = secondCurrencyKey }
+            }
+        };
+
+        var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
+
+        // First update - remove a price
+        var updateRequest1 = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Test Product",
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = firstCurrencyKey } }
+            }
+        };
+
+        await _fixture.Client.UpdateProductAsync(updateRequest1);
+
+        // Second update - restore the price
+        var updateRequest2 = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Test Product",
+                CategoryKey = categoryResponse.Key,
+                Prices =
+                {
+                    new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = firstCurrencyKey },
+                    new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = secondCurrencyKey }
+                }
+            }
+        };
+
+        // Act
+        var response = await _fixture.Client.UpdateProductAsync(updateRequest2);
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.Contains(response.Product.Prices, p => p.Price.CurrencyKey == secondCurrencyKey && p.Revision.Action == "Restored");
+        Assert.Equal(2, response.Product.Prices.Count);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithPriceValueUpdate_ShouldUpdatePrice()
+    {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+
         var currencyKey = Guid.NewGuid().ToString();
-        var productPrice = new ProductPriceBuilder().WithCurrencyKey(currencyKey).Build();
-        var createProduct = new CreateProductBuilder()
-            .WithProductPrices([productPrice])
-            .Build();
+        var createProduct = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKey } }
+        };
 
-        var createResponse = await _fixture.Client.CreateProductAsync(new CreateProductRequest { Product = createProduct });
+        var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
 
-        var newCurrencyKey = Guid.NewGuid().ToString();
-        var updatedProductPrice = new ProductPriceBuilder()
-            .WithCurrencyKey(newCurrencyKey)
-            .Build();
+        var updateRequest = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Test Product",
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = currencyKey } }
+            }
+        };
 
-        var updatedProduct = new ProductBuilder()
-            .WithKey(createResponse.Product.Key)
-            .WithProductPrices([updatedProductPrice])
-            .Build();
+        // Act
+        var response = await _fixture.Client.UpdateProductAsync(updateRequest);
 
-        var updateResponse = await _fixture.Client.UpdateProductAsync(new UpdateProductRequest { Key = createResponse.Product.Key, Product = updatedProduct });
-
-        Assert.NotNull(updateResponse);
-
-        var currencyKeyRevisions = await _fixture.Client.GetProductPriceRevisionsAsync(
-            new GetProductPriceRevisionsRequest { Key = createResponse.Product.Key, CurrencyKey = currencyKey });
-
-        Assert.Single(currencyKeyRevisions.Revisions);
-        Assert.Equal("Archived", currencyKeyRevisions.Revisions[0].Status);
-
-        var newCurrencyKeyRevisions = await _fixture.Client.GetProductPriceRevisionsAsync(
-            new GetProductPriceRevisionsRequest { Key = createResponse.Product.Key, CurrencyKey = newCurrencyKey });
-
-        Assert.Single(newCurrencyKeyRevisions.Revisions);
-        Assert.Equal("Active", newCurrencyKeyRevisions.Revisions[0].Status);
+        // Assert
+        Assert.NotNull(response);
+        Assert.Single(response.Product.Prices);
+        Assert.Equal(19, response.Product.Prices[0].Price.Units);
+        Assert.Equal(99, response.Product.Prices[0].Price.Nanos);
+        Assert.Equal("Updated", response.Product.Prices[0].Revision.Action);
     }
 
     [Fact]
-    public async Task Update_ShouldHookOnToOldRevision_WhenCurrencyKeyIsReverted()
+    public async Task UpdateAsync_WithUnchangedPrice_ShouldMarkAsUnmodified()
     {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+
         var currencyKey = Guid.NewGuid().ToString();
-        var productPrice = new ProductPriceBuilder().WithCurrencyKey(currencyKey).Build();
-        var createProduct = new CreateProductBuilder()
-            .WithProductPrices([productPrice])
-            .Build();
+        var createProduct = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKey } }
+        };
 
-        var createResponse = await _fixture.Client.CreateProductAsync(new CreateProductRequest { Product = createProduct });
+        var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
 
-        var newCurrencyKey = Guid.NewGuid().ToString();
-        var updatedProductPrice = new ProductPriceBuilder()
-            .WithCurrencyKey(newCurrencyKey)
-            .Build();
+        var updateRequest = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Updated Product", // Change product name but keep same price
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKey } }
+            }
+        };
 
-        var updatedProduct = new ProductBuilder()
-            .WithKey(createResponse.Product.Key)
-            .WithProductPrices([updatedProductPrice])
-            .Build();
+        // Act
+        var response = await _fixture.Client.UpdateProductAsync(updateRequest);
 
-        var updateResponse = await _fixture.Client.UpdateProductAsync(new UpdateProductRequest { Key = createResponse.Product.Key, Product = updatedProduct });
+        // Assert
+        Assert.NotNull(response);
+        Assert.Single(response.Product.Prices);
+        Assert.Equal(9, response.Product.Prices[0].Price.Units);
+        Assert.Equal(99, response.Product.Prices[0].Price.Nanos);
+        Assert.Equal("Unmodified", response.Product.Prices[0].Revision.Action);
+    }
 
-        Assert.NotNull(updateResponse);
+    [Fact]
+    public async Task UpdateAsync_ProductDoesNotExist_ShouldThrow()
+    {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
 
-        var revertedProduct = new ProductBuilder()
-            .WithKey(createResponse.Product.Key)
-            .WithProductPrices([productPrice])
-            .Build();
+        var updateRequest = new ProductActionRequest
+        {
+            Key = Guid.NewGuid().ToString(),
+            Product = new Product
+            {
+                Name = "Test Product",
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
+            }
+        };
 
-        var revertResponse = await _fixture.Client.UpdateProductAsync(new UpdateProductRequest { Key = createResponse.Product.Key, Product = revertedProduct });
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RpcException>(
+            async () => await _fixture.Client.UpdateProductAsync(updateRequest));
+        Assert.Equal(StatusCode.NotFound, exception.StatusCode);
+    }
 
-        Assert.NotNull(revertResponse);
+    [Theory]
+    [InlineData("invalid-guid")]
+    [InlineData("")]
+    public async Task UpdateAsync_InvalidKey_ShouldThrow(string key)
+    {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
 
-        var currencyKeyRevisions = await _fixture.Client.GetProductPriceRevisionsAsync(
-            new GetProductPriceRevisionsRequest { Key = createResponse.Product.Key, CurrencyKey = currencyKey });
+        var updateRequest = new ProductActionRequest
+        {
+            Key = key,
+            Product = new Product
+            {
+                Name = "Test Product",
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
+            }
+        };
 
-        Assert.Equal(2, currencyKeyRevisions.Revisions.Count);
-        Assert.Equal("Archived", currencyKeyRevisions.Revisions.FirstOrDefault(x => x.Revision == 1)?.Status);
-        Assert.Equal("Active", currencyKeyRevisions.Revisions.FirstOrDefault(x => x.Revision == 2)?.Status);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RpcException>(
+            async () => await _fixture.Client.UpdateProductAsync(updateRequest));
+        Assert.Equal(StatusCode.InvalidArgument, exception.StatusCode);
+    }
 
-        var newCurrencyKeyRevisions = await _fixture.Client.GetProductPriceRevisionsAsync(
-            new GetProductPriceRevisionsRequest { Key = createResponse.Product.Key, CurrencyKey = newCurrencyKey });
+    [Fact]
+    public async Task UpdateAsync_OnUpdate_ShouldUseSharedTimestamp()
+    {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
 
-        Assert.Single(newCurrencyKeyRevisions.Revisions);
-        Assert.Equal("Archived", newCurrencyKeyRevisions.Revisions[0].Status);
+        var createProduct = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
+            }
+        };
+
+        var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
+
+        var updateRequest = new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = new Product
+            {
+                Name = "Updated Product",
+                CategoryKey = categoryResponse.Key,
+                Prices = { new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
+            }
+        };
+
+        // Act
+        var response = await _fixture.Client.UpdateProductAsync(updateRequest);
+
+        // Assert
+        var updateTimestamps = response.Product.Prices
+            .Select(p => p.Revision.CreatedAt)
+            .Concat(new[] { response.Revision.CreatedAt })
+            .ToList();
+
+        Assert.Single(updateTimestamps.Distinct());
     }
 }

@@ -1,8 +1,9 @@
+using AutoMapper;
 using Grpc.Core;
-using Kaleido.Common.Services.Grpc.Exceptions;
-using Kaleido.Common.Services.Grpc.Models.Validations;
-using Kaleido.Common.Services.Grpc.Validators;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Grpc.Products;
+using Kaleido.Modules.Services.Grpc.Products.Common.Mappers;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Modules.Services.Grpc.Products.GetAll;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,90 +15,158 @@ namespace Kaleido.Modules.Services.Grpc.Products.Tests.Unit.GetAll;
 public class GetAllHandlerTests
 {
     private readonly AutoMocker _mocker;
-    private readonly GetAllHandler _handler;
-    private readonly List<Product> _expectedProducts;
+    private readonly GetAllHandler _sut;
+    private readonly EmptyRequest _testRequest;
+    private readonly List<ManagerResponse> _testManagerResponses;
+    private readonly ProductListResponse _testResponse;
 
     public GetAllHandlerTests()
     {
         _mocker = new AutoMocker();
-        _mocker.Use<ILogger<GetAllHandler>>(NullLogger<GetAllHandler>.Instance);
 
-        _expectedProducts = new List<Product>
+        // Setup test data
+        _testRequest = new EmptyRequest();
+
+        var productEntity = new ProductEntity
         {
-            new Product { Key = "1", Name = "Product 1" },
-            new Product { Key = "2", Name = "Product 2" }
+            Name = "Test Product",
+            Description = "Test Description",
+            CategoryKey = Guid.NewGuid(),
+            ImageUrl = "https://example.com/image.jpg"
         };
 
+        var productRevision = new ProductRevisionEntity
+        {
+            Key = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var productResult = new EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>
+        {
+            Entity = productEntity,
+            Revision = productRevision
+        };
+
+        var priceEntity = new ProductPriceEntity
+        {
+            Units = 9,
+            Nanos = 99,
+            CurrencyKey = Guid.NewGuid(),
+            ProductKey = productRevision.Key
+        };
+
+        var priceRevision = new ProductPriceRevisionEntity
+        {
+            Key = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var priceResult = new EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>
+        {
+            Entity = priceEntity,
+            Revision = priceRevision
+        };
+
+        _testManagerResponses = new List<ManagerResponse>
+        {
+            new(productResult, new[] { priceResult })
+        };
+
+        _testResponse = new ProductListResponse
+        {
+            Products =
+            {
+                new ProductResponse
+                {
+                    Product = new ProductWithPricesResponse
+                    {
+                        Name = productEntity.Name,
+                        Description = productEntity.Description,
+                        CategoryKey = productEntity.CategoryKey.ToString(),
+                        Prices =
+                        {
+                            new ProductPriceResponse
+                            {
+                                Price = new ProductPrice
+                                {
+                                    Units = priceEntity.Units,
+                                    Nanos = priceEntity.Nanos,
+                                    CurrencyKey = priceEntity.CurrencyKey.ToString()
+                                }
+                            }
+                        }
+                    },
+                    Revision = new BaseRevision
+                    {
+                        Key = productRevision.Key.ToString(),
+                        CreatedAt = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(productRevision.CreatedAt)
+                    }
+                }
+            }
+        };
+
+        // Setup happy paths
         _mocker.GetMock<IGetAllManager>()
-            .Setup(m => m.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_expectedProducts);
+            .Setup(x => x.GetAllProductsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_testManagerResponses);
 
-        _mocker.GetMock<IRequestValidator<GetAllProductsRequest>>()
-            .Setup(v => v.ValidateAsync(It.IsAny<GetAllProductsRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+        _mocker.Use(new MapperConfiguration(cfg => cfg.AddProfile<ProductMappingProfile>()).CreateMapper());
+        _mocker.Use(NullLogger<GetAllHandler>.Instance);
 
-        _handler = _mocker.CreateInstance<GetAllHandler>();
+        _sut = _mocker.CreateInstance<GetAllHandler>();
     }
 
     [Fact]
-    public async Task HandleAsync_ValidRequest_ReturnsAllProducts()
+    public async Task HandleAsync_WithValidRequest_ShouldReturnResponse()
     {
-        // Arrange
-        var request = new GetAllProductsRequest();
-
         // Act
-        var response = await _handler.HandleAsync(request);
+        var result = await _sut.HandleAsync(_testRequest, CancellationToken.None);
 
         // Assert
-        Assert.NotNull(response);
-        Assert.Equal(_expectedProducts.Count, response.Products.Count);
-        Assert.Equal(_expectedProducts, response.Products);
+        Assert.NotNull(result);
+        Assert.Single(result.Products);
+        Assert.Equal(_testResponse.Products[0].Product.Name, result.Products[0].Product.Name);
+        Assert.Equal(_testResponse.Products[0].Product.Description, result.Products[0].Product.Description);
+        Assert.Equal(_testResponse.Products[0].Product.CategoryKey, result.Products[0].Product.CategoryKey);
+        Assert.Single(result.Products[0].Product.Prices);
+        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Units, result.Products[0].Product.Prices[0].Price.Units);
+        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Nanos, result.Products[0].Product.Prices[0].Price.Nanos);
+
+        _mocker.GetMock<IGetAllManager>()
+            .Verify(x => x.GetAllProductsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task HandleAsync_EmptyProductList_ReturnsEmptyResponse()
+    public async Task HandleAsync_WithEmptyList_ShouldReturnEmptyResponse()
     {
         // Arrange
-        var request = new GetAllProductsRequest();
-        var emptyProductList = new List<Product>();
         _mocker.GetMock<IGetAllManager>()
-            .Setup(m => m.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyProductList);
+            .Setup(x => x.GetAllProductsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ManagerResponse>());
 
         // Act
-        var response = await _handler.HandleAsync(request);
+        var result = await _sut.HandleAsync(_testRequest, CancellationToken.None);
 
         // Assert
-        Assert.NotNull(response);
-        Assert.Empty(response.Products);
-    }
+        Assert.NotNull(result);
+        Assert.Empty(result.Products);
 
-    [Fact]
-    public async Task HandleAsync_ValidationFails_ThrowsValidationException()
-    {
-        // Arrange
-        var request = new GetAllProductsRequest();
-        var validationResult = new ValidationResult();
-        validationResult.AddRequiredError(["Products"], "Products are required");
-        _mocker.GetMock<IRequestValidator<GetAllProductsRequest>>()
-            .Setup(v => v.ValidateAsync(It.IsAny<GetAllProductsRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validationResult);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() => _handler.HandleAsync(request));
-    }
-
-    [Fact]
-    public async Task HandleAsync_ExceptionThrown_ThrowsRpcExceptionWithInternalError()
-    {
-        // Arrange
-        var request = new GetAllProductsRequest();
         _mocker.GetMock<IGetAllManager>()
-            .Setup(m => m.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception());
+            .Verify(x => x.GetAllProductsAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenExceptionOccurs_ShouldThrowRpcException()
+    {
+        // Arrange
+        _mocker.GetMock<IGetAllManager>()
+            .Setup(x => x.GetAllProductsAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Test exception"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<RpcException>(() => _handler.HandleAsync(request));
+        var exception = await Assert.ThrowsAsync<RpcException>(
+            () => _sut.HandleAsync(_testRequest, CancellationToken.None));
+
         Assert.Equal(StatusCode.Internal, exception.StatusCode);
     }
 }

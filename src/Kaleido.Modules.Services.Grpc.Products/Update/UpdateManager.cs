@@ -1,95 +1,172 @@
-
-using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Common.Models;
-using Kaleido.Grpc.Products;
+using AutoMapper;
 using Kaleido.Common.Services.Grpc.Constants;
-using System.Text.Json;
+using Kaleido.Common.Services.Grpc.Exceptions;
+using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Update;
 
 public class UpdateManager : IUpdateManager
 {
-    private readonly ILogger<UpdateManager> _logger;
-    private readonly IProductMapper _productMapper;
-    private readonly IProductPriceRepository _productPriceRepository;
-    private readonly IProductRepository _productRepository;
+    private readonly IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> _productLifecycleHandler;
+    private readonly IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> _priceLifecycleHandler;
+    private readonly IMapper _mapper;
 
     public UpdateManager(
-        ILogger<UpdateManager> logger,
-        IProductMapper productMapper,
-        IProductPriceRepository productPriceRepository,
-        IProductRepository productRepository
-        )
+        IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> productLifecycleHandler,
+        IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> priceLifecycleHandler,
+        IMapper mapper)
     {
-        _logger = logger;
-        _productMapper = productMapper;
-        _productPriceRepository = productPriceRepository;
-        _productRepository = productRepository;
+        _productLifecycleHandler = productLifecycleHandler;
+        _priceLifecycleHandler = priceLifecycleHandler;
+        _mapper = mapper;
     }
 
-    public async Task<Product?> UpdateAsync(Product product, CancellationToken cancellationToken = default)
+    public async Task<ManagerResponse> UpdateAsync(
+        Guid key,
+        ProductEntity product,
+        IEnumerable<ProductPriceEntity> prices,
+        CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Updating Product with key: {key}", product.Key);
-        var productKey = Guid.Parse(product.Key);
-        var storedProduct = await _productRepository.GetActiveAsync(productKey, cancellationToken);
+        var timestamp = DateTime.UtcNow;
 
-        if (storedProduct == null)
+        var productRevision = new ProductRevisionEntity
         {
-            return null;
+            Key = key,
+            CreatedAt = timestamp,
+        };
+
+        EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>? productResult;
+        try
+        {
+            productResult = await _productLifecycleHandler.UpdateAsync(key, product, productRevision, cancellationToken);
+        }
+        catch (NotModifiedException)
+        {
+            productResult = await _productLifecycleHandler.GetAsync(key, cancellationToken: cancellationToken);
         }
 
-        var newRevision = storedProduct!.Revision + 1;
-        var productEntity = _productMapper.ToCreateEntity(product, newRevision);
-
-        var updatedProductEntity = storedProduct;
-        if (!storedProduct.Equals(productEntity))
+        if (productResult == null)
         {
-            _logger.LogInformation("Product with key: {key} has changed, updating", product.Key);
-            updatedProductEntity = await _productRepository.UpdateAsync(productEntity, cancellationToken);
+            return new ManagerResponse(ManagerResponseState.NotFound);
         }
 
-        var storedProductPrices = await _productPriceRepository.GetAllByProductKeyAsync(productKey, cancellationToken);
+        var productPrices = await _priceLifecycleHandler.FindAllAsync(price => price.ProductKey == key, cancellationToken: cancellationToken);
 
-        var productPriceEntities = new List<ProductPriceEntity>();
+        // Get latest revision of product prices
+        var activeProductPrices = productPrices
+            .Where(productPrice => productPrice.Revision.Status == RevisionStatus.Active);
 
-        var latestStoredProductPrices = storedProductPrices.GroupBy(x => x.CurrencyKey)
-            .Select(g => g.OrderByDescending(x => x.Revision).First());
+        // Get Prices to delete
+        var pricesToDelete = activeProductPrices
+            .Where(x => !prices.Any(y => y.CurrencyKey == x.Entity.CurrencyKey) &&
+                        x.Revision.Action != RevisionAction.Deleted)
+            .ToList();
 
-        _logger.LogInformation($"{JsonSerializer.Serialize(latestStoredProductPrices)}");
+        // Get Prices to create
+        var pricesToCreate = prices
+            .Where(x => !activeProductPrices
+                .Any(y => y.Entity.CurrencyKey == x.CurrencyKey))
+            .Where(x => activeProductPrices.FirstOrDefault(y => y.Entity.CurrencyKey == x.CurrencyKey)?.Revision.Action != RevisionAction.Deleted)
+            .ToList();
 
-        foreach (var storedProductPrice in latestStoredProductPrices)
-        {
-            var incomingProductPrice = product.Prices.FirstOrDefault(price => Guid.Parse(price.CurrencyKey).Equals(storedProductPrice.CurrencyKey));
-            if (incomingProductPrice == null)
+        // Get Prices to restore
+        var pricesToRestore = activeProductPrices
+            .Where(x => prices
+                .Any(y =>
+                    y.CurrencyKey == x.Entity.CurrencyKey &&
+                    x.Revision.Action == RevisionAction.Deleted))
+            .ToList();
+
+        // Get Prices to update
+        var pricesToUpdate = prices.Where(x =>
+            activeProductPrices.Any(y =>
+                y.Entity.CurrencyKey == x.CurrencyKey &&
+                (y.Entity.Units != x.Units || y.Entity.Nanos != x.Nanos) &&
+                y.Revision.Action != RevisionAction.Deleted))
+            .Select(x =>
             {
-                _logger.LogInformation("ProductPrice with key: {key} not found, archiving", storedProductPrice.Key);
-                await _productPriceRepository.UpdateStatusAsync(storedProductPrice.Key!, EntityStatus.Archived, cancellationToken);
-            }
-            else if (!storedProductPrice.Equals(_productMapper.ToCreatePriceEntity(storedProduct.Key!, incomingProductPrice)))
-            {
-                _logger.LogInformation("ProductPrice with key: {key} has changed, updating", storedProductPrice.Key);
-                var newProductPrice = _productMapper.ToCreatePriceEntity(storedProduct.Key!, incomingProductPrice, storedProductPrice.Key, storedProductPrice.Revision + 1);
-                var updatedProductPrice = await _productPriceRepository.UpdateAsync(newProductPrice, cancellationToken);
-                productPriceEntities.Add(updatedProductPrice);
-            }
-            else
-            {
-                productPriceEntities.Add(storedProductPrice);
-            }
-        }
+                var matchedActivePrice = activeProductPrices.First(y => y.Entity.CurrencyKey == x.CurrencyKey);
+                var copyOfMatched = _mapper.Map<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>(matchedActivePrice);
+                x.ProductKey = key;
+                copyOfMatched.Entity = x;
+                return copyOfMatched;
+            })
+            .ToList();
 
-        var newProductPrices = product.Prices.Where(price => latestStoredProductPrices.All(storedPrice => storedPrice.CurrencyKey != Guid.Parse(price.CurrencyKey)));
+        // Get the unchanged prices
+        var unchangedPrices = activeProductPrices
+            .Where(x => !pricesToDelete.Any(y => y.Key == x.Key) &&
+                        !pricesToCreate.Any(y => y.CurrencyKey == x.Entity.CurrencyKey) &&
+                        !pricesToRestore.Any(y => y.Key == x.Key) &&
+                        !pricesToUpdate.Any(y => y.Key == x.Key) &&
+                        x.Revision.Action != RevisionAction.Deleted)
+            .ToList();
 
-        foreach (var newProductPrice in newProductPrices)
+        var updatedPrices = new List<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>();
+
+        // Delete prices
+        foreach (var price in pricesToDelete)
         {
-            _logger.LogInformation("New ProductPrice found for currency {currencyKey}, creating", newProductPrice.CurrencyKey);
-            var productPrice = _productMapper.ToCreatePriceEntity(updatedProductEntity.Key, newProductPrice, revision: 1);
-            var createdProductPrice = await _productPriceRepository.CreateAsync(productPrice, cancellationToken);
-            productPriceEntities.Add(createdProductPrice);
+            var priceRevisionEntity = new ProductPriceRevisionEntity
+            {
+                Key = price.Key,
+                CreatedAt = timestamp,
+            };
+
+            var priceResult = await _priceLifecycleHandler.DeleteAsync(price.Key, priceRevisionEntity, cancellationToken);
+            updatedPrices.Add(priceResult);
         }
 
-        var updatedProduct = _productMapper.FromEntities(updatedProductEntity, productPriceEntities);
-        return updatedProduct;
+        // Create prices
+        foreach (var price in pricesToCreate)
+        {
+            price.ProductKey = key;
+            var priceRevisionEntity = new ProductPriceRevisionEntity
+            {
+                Key = Guid.NewGuid(),
+                CreatedAt = timestamp,
+            };
+
+            var priceResult = await _priceLifecycleHandler.CreateAsync(price, priceRevisionEntity, cancellationToken);
+            updatedPrices.Add(priceResult);
+        }
+
+        // Restore prices
+        foreach (var price in pricesToRestore)
+        {
+            var priceRevisionEntity = new ProductPriceRevisionEntity
+            {
+                Key = price.Key,
+                CreatedAt = timestamp,
+            };
+
+            var priceResult = await _priceLifecycleHandler.RestoreAsync(price.Key, priceRevisionEntity, cancellationToken);
+            updatedPrices.Add(priceResult);
+        }
+
+        // Update prices
+        foreach (var price in pricesToUpdate)
+        {
+            var priceRevisionEntity = new ProductPriceRevisionEntity
+            {
+                Key = price.Key,
+                CreatedAt = timestamp,
+            };
+
+            var priceResult = await _priceLifecycleHandler.UpdateAsync(price.Key, price.Entity, priceRevisionEntity, cancellationToken);
+            updatedPrices.Add(priceResult);
+        }
+
+        // Update the unchanged prices
+        updatedPrices.AddRange(unchangedPrices.Select(x =>
+        {
+            x.Revision.Action = RevisionAction.Unmodified;
+            return x;
+        }));
+
+        return new ManagerResponse(productResult, updatedPrices);
     }
 }

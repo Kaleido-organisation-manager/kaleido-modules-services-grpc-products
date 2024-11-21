@@ -1,221 +1,137 @@
+using FluentValidation.TestHelper;
 using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Unit.Common.Validators;
+
 public class ProductPriceValidatorTests
 {
-    private readonly ProductPriceValidator _validator;
+    private readonly ProductPriceValidator _sut;
 
     public ProductPriceValidatorTests()
     {
-        _validator = new ProductPriceValidator();
+        // Create actual instances of validators
+        var keyValidator = new KeyValidator();
+        var currencyKeyValidator = new CurrencyKeyValidator(keyValidator);
+        _sut = new ProductPriceValidator(currencyKeyValidator);
     }
 
     [Fact]
-    public async Task ValidateAsync_WithValidPrices_ShouldReturnValidResult()
+    public async Task Validate_WithValidPrice_ShouldNotHaveValidationError()
     {
         // Arrange
-        var productPrices = new List<ProductPrice>
+        var price = new ProductPrice
         {
-            new ProductPrice { Value = 10.99f, CurrencyKey = Guid.NewGuid().ToString() },
-            new ProductPrice { Value = 5.50f, CurrencyKey = Guid.NewGuid().ToString() },
-            new ProductPrice { Value = 0.01f, CurrencyKey = Guid.NewGuid().ToString() }
+            Units = 10,
+            Nanos = 0,
+            CurrencyKey = Guid.NewGuid().ToString()
         };
 
         // Act
-        var result = await _validator.ValidateAsync(productPrices);
+        var result = await _sut.TestValidateAsync(price);
 
         // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
-    public async Task ValidateAsync_WithZeroPrice_ShouldReturnValidResult()
+    public async Task Validate_WithNegativeValue_ShouldHaveValidationError()
     {
         // Arrange
-        var productPrices = new List<ProductPrice>
+        var price = new ProductPrice
         {
-            new ProductPrice { Value = 0, CurrencyKey = Guid.NewGuid().ToString() }
+            Units = -10,
+            Nanos = 0,
+            CurrencyKey = Guid.NewGuid().ToString()
         };
 
         // Act
-        var result = await _validator.ValidateAsync(productPrices);
+        var result = await _sut.TestValidateAsync(price);
 
         // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
+        result.ShouldHaveValidationErrorFor(x => x.Units);
     }
 
     [Fact]
-    public async Task ValidateAsync_WithNegativePrice_ShouldReturnInvalidResult()
+    public async Task Validate_WithEmptyCurrencyKey_ShouldHaveValidationError()
     {
         // Arrange
-        var productPrices = new List<ProductPrice>
+        var price = new ProductPrice
         {
-            new ProductPrice { Value = -5.99f, CurrencyKey = Guid.NewGuid().ToString() }
+            Units = 10,
+            Nanos = 0,
+            CurrencyKey = ""
         };
 
         // Act
-        var result = await _validator.ValidateAsync(productPrices);
+        var result = await _sut.TestValidateAsync(price);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
+        result.ShouldHaveValidationErrorFor(x => x.CurrencyKey);
     }
 
     [Fact]
-    public async Task ValidateAsync_WithMixedValidAndInvalidPrices_ShouldReturnInvalidResult()
+    public async Task Validate_WithInvalidGuidCurrencyKey_ShouldHaveValidationError()
     {
         // Arrange
-        var productPrices = new List<ProductPrice>
+        var price = new ProductPrice
         {
-            new ProductPrice { Value = 10.99f, CurrencyKey = Guid.NewGuid().ToString() },
-            new ProductPrice { Value = -1f, CurrencyKey = Guid.NewGuid().ToString() },
-            new ProductPrice { Value = 5.50f, CurrencyKey = Guid.NewGuid().ToString() }
+            Units = 10,
+            Nanos = 0,
+            CurrencyKey = "not-a-guid"
         };
 
         // Act
-        var result = await _validator.ValidateAsync(productPrices);
+        var result = await _sut.TestValidateAsync(price);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
+        result.ShouldHaveValidationErrorFor(x => x.CurrencyKey);
     }
 
-    [Fact]
-    public async Task ValidateAsync_WithEmptyList_ShouldReturnValidResult()
+    [Theory]
+    [InlineData(-10, 0)]
+    [InlineData(0, -1)]
+    [InlineData(0, 100)]
+    public async Task Validate_WithInvalidPrice_ShouldHaveValidationError(int units, int nanos)
     {
         // Arrange
-        var productPrices = new List<ProductPrice>();
-
-        // Act
-        var result = await _validator.ValidateAsync(productPrices);
-
-        // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateAsync_WithInvalidCurrencyKey_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var productPrices = new List<ProductPrice>
+        var price = new ProductPrice
         {
-            new ProductPrice { Value = 10.99f, CurrencyKey = "invalid-guid" }
+            Units = units,
+            Nanos = nanos,
+            CurrencyKey = Guid.NewGuid().ToString()
         };
 
         // Act
-        var result = await _validator.ValidateAsync(productPrices);
+        var result = await _sut.TestValidateAsync(price);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
+        if (units < 0)
+        {
+            result.ShouldHaveValidationErrorFor(x => x.Units);
+        }
+        else if (nanos < 0 || nanos >= 100)
+        {
+            result.ShouldHaveValidationErrorFor(x => x.Nanos);
+        }
     }
 
+
     [Fact]
-    public async Task ValidateAsync_WithEmptyCurrencyKey_ShouldReturnInvalidResult()
+    public async Task Validate_WithZeroPrice_ShouldBeValid()
     {
         // Arrange
-        var productPrices = new List<ProductPrice>
+        var price = new ProductPrice
         {
-            new ProductPrice { Value = 10.99f, CurrencyKey = "" }
+            Units = 0,
+            Nanos = 0,
+            CurrencyKey = Guid.NewGuid().ToString()
         };
 
         // Act
-        var result = await _validator.ValidateAsync(productPrices);
+        var result = await _sut.TestValidateAsync(price);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Equal(2, result.Errors.Count());
-    }
-
-    [Fact]
-    public async Task ValidateAsync_WithWhitespaceCurrencyKey_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var productPrices = new List<ProductPrice>
-        {
-            new ProductPrice { Value = 10.99f, CurrencyKey = "   " }
-        };
-
-        // Act
-        var result = await _validator.ValidateAsync(productPrices);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateCurrencyKeyAsync_WithValidGuid_ShouldReturnValidResult()
-    {
-        // Arrange
-        var currencyKey = Guid.NewGuid().ToString();
-
-        // Act
-        var result = await _validator.ValidateCurrencyKeyAsync(currencyKey);
-
-        // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateCurrencyKeyAsync_WithInvalidGuid_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var currencyKey = "invalid-guid";
-
-        // Act
-        var result = await _validator.ValidateCurrencyKeyAsync(currencyKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateCurrencyKeyAsync_WithEmptyString_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var currencyKey = string.Empty;
-
-        // Act
-        var result = await _validator.ValidateCurrencyKeyAsync(currencyKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Equal(2, result.Errors.Count());
-    }
-
-    [Fact]
-    public async Task ValidateCurrencyKeyAsync_WithWhitespace_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var currencyKey = "   ";
-
-        // Act
-        var result = await _validator.ValidateCurrencyKeyAsync(currencyKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateCurrencyKeyAsync_WithNull_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        string currencyKey = null!;
-
-        // Act
-        var result = await _validator.ValidateCurrencyKeyAsync(currencyKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Equal(2, result.Errors.Count());
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }
-

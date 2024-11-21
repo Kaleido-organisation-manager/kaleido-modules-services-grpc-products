@@ -1,10 +1,9 @@
-using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
+using System.Linq.Expressions;
+using Kaleido.Common.Services.Grpc.Constants;
+using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
-using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.GetAll;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Moq.AutoMock;
 
@@ -14,98 +13,195 @@ public class GetAllManagerTests
 {
     private readonly AutoMocker _mocker;
     private readonly GetAllManager _sut;
-    private readonly List<ProductEntity> _productEntities;
-    private readonly List<ProductPriceEntity> _productPriceEntities;
-    private readonly List<Product> _expectedProducts;
+    private readonly DateTime _testTimestamp;
+    private readonly List<EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>> _testProducts;
+    private readonly List<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>> _testPrices;
+    private readonly Guid _testProductKey;
 
     public GetAllManagerTests()
     {
         _mocker = new AutoMocker();
-        _mocker.Use<ILogger<GetAllManager>>(NullLogger<GetAllManager>.Instance);
+        _testTimestamp = DateTime.UtcNow;
+        _testProductKey = Guid.NewGuid();
 
-        _productEntities = new List<ProductEntity>
+        // Setup test data
+        _testProducts = new List<EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>>
         {
-            new ProductEntity { Key = Guid.NewGuid(), Name = "Product 1", CategoryKey = Guid.NewGuid() },
-            new ProductEntity { Key = Guid.NewGuid(), Name = "Product 2", CategoryKey = Guid.NewGuid() }
+            new()
+            {
+                Entity = new ProductEntity
+                {
+                    Name = "Test Product",
+                    Description = "Test Description",
+                    CategoryKey = Guid.NewGuid()
+                },
+                Revision = new ProductRevisionEntity
+                {
+                    Key = _testProductKey,
+                    CreatedAt = _testTimestamp,
+                    Action = RevisionAction.Created
+                }
+            }
         };
 
-        _productPriceEntities = new List<ProductPriceEntity>
+        _testPrices = new List<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>
         {
-            new ProductPriceEntity { ProductKey = _productEntities[0].Key, Price = 9.99f, CurrencyKey = Guid.NewGuid() },
-            new ProductPriceEntity { ProductKey = _productEntities[1].Key, Price = 19.99f, CurrencyKey = Guid.NewGuid() }
+            new()
+            {
+                Entity = new ProductPriceEntity
+                {
+                    ProductKey = _testProductKey,
+                    Units = 9,
+                    Nanos = 99,
+                    CurrencyKey = Guid.NewGuid()
+                },
+                Revision = new ProductPriceRevisionEntity
+                {
+                    Key = Guid.NewGuid(),
+                    CreatedAt = _testTimestamp,
+                    Action = RevisionAction.Created,
+                    Revision = 1
+                }
+            }
         };
 
-        _expectedProducts = new List<Product>
-        {
-            new Product { Key = _productEntities[0].Key.ToString(), Name = "Product 1", CategoryKey = _productEntities[0].CategoryKey.ToString() },
-            new Product { Key = _productEntities[1].Key.ToString(), Name = "Product 2", CategoryKey = _productEntities[1].CategoryKey.ToString() }
-        };
+        // Setup happy paths
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Setup(x => x.GetAllAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_testProducts);
 
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_productEntities);
-
-        _mocker.GetMock<IProductPriceRepository>()
-            .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_productPriceEntities);
-
-        _mocker.GetMock<IProductMapper>()
-            .Setup(x => x.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()))
-            .Returns<ProductEntity, IEnumerable<ProductPriceEntity>>((product, prices) =>
-                new Product { Key = product.Key.ToString(), Name = product.Name, CategoryKey = product.CategoryKey.ToString() });
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Setup(x => x.FindAllAsync(
+                It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_testPrices);
 
         _sut = _mocker.CreateInstance<GetAllManager>();
     }
 
     [Fact]
-    public async Task GetAllAsync_ReturnsAllProducts()
+    public async Task GetAllProductsAsync_WithValidInputs_ShouldReturnProductsAndPrices()
     {
         // Act
-        var result = await _sut.GetAllAsync();
+        var result = await _sut.GetAllProductsAsync(CancellationToken.None);
 
         // Assert
-        Assert.Equal(_expectedProducts.Count, result.Count());
-        Assert.Equal(_expectedProducts[0].Key, result.ElementAt(0).Key);
-        Assert.Equal(_expectedProducts[0].Name, result.ElementAt(0).Name);
-        Assert.Equal(_expectedProducts[1].Key, result.ElementAt(1).Key);
-        Assert.Equal(_expectedProducts[1].Name, result.ElementAt(1).Name);
+        var resultList = result.ToList();
+        Assert.Single(resultList);
+        Assert.NotNull(resultList[0].Product);
+        Assert.Equal(_testProductKey, resultList[0].Product!.Revision.Key);
+        Assert.Equal("Test Product", resultList[0].Product!.Entity.Name);
+        Assert.NotNull(resultList[0].ProductPrices);
+        Assert.Single(resultList[0].ProductPrices!);
+        Assert.Equal(9, resultList[0].ProductPrices!.First().Entity.Units);
+        Assert.Equal(99, resultList[0].ProductPrices!.First().Entity.Nanos);
 
-        _mocker.GetMock<IProductRepository>().Verify(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.GetAllActiveByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        _mocker.GetMock<IProductMapper>().Verify(x => x.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()), Times.Exactly(2));
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Verify(x => x.GetAllAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Verify(x => x.FindAllAsync(
+                It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task GetAllAsync_NoProducts_ReturnsEmptyList()
+    public async Task GetAllProductsAsync_WithDeletedPrices_ShouldFilterOutDeletedPrices()
     {
         // Arrange
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ProductEntity>());
+        var deletedPrices = new List<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>
+        {
+            new()
+            {
+                Entity = new ProductPriceEntity
+                {
+                    ProductKey = _testProductKey,
+                    Units = 9,
+                    Nanos = 99,
+                    CurrencyKey = Guid.NewGuid()
+                },
+                Revision = new ProductPriceRevisionEntity
+                {
+                    Key = Guid.NewGuid(),
+                    CreatedAt = _testTimestamp,
+                    Action = RevisionAction.Deleted,
+                    Revision = 2
+                }
+            }
+        };
 
-        _mocker.GetMock<IProductPriceRepository>()
-            .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ProductPriceEntity>());
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Setup(x => x.FindAllAsync(
+                It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deletedPrices);
 
         // Act
-        var result = await _sut.GetAllAsync();
+        var result = await _sut.GetAllProductsAsync(CancellationToken.None);
+
+        // Assert
+        var resultList = result.ToList();
+        Assert.Single(resultList);
+        Assert.NotNull(resultList[0].Product);
+        Assert.NotNull(resultList[0].ProductPrices);
+        Assert.Empty(resultList[0].ProductPrices!);
+    }
+
+    [Fact]
+    public async Task GetAllProductsAsync_WithNoProducts_ShouldReturnEmptyList()
+    {
+        // Arrange
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Setup(x => x.GetAllAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>>());
+
+        // Act
+        var result = await _sut.GetAllProductsAsync(CancellationToken.None);
 
         // Assert
         Assert.Empty(result);
-        _mocker.GetMock<IProductRepository>().Verify(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _mocker.GetMock<IProductPriceRepository>().Verify(x => x.GetAllActiveByProductKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mocker.GetMock<IProductMapper>().Verify(x => x.FromEntities(It.IsAny<ProductEntity>(), It.IsAny<IEnumerable<ProductPriceEntity>>()), Times.Never);
+
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Verify(x => x.GetAllAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Verify(x => x.FindAllAsync(
+                It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task GetAllAsync_RepositoryThrowsException_PropagatesException()
+    public async Task GetAllProductsAsync_WithProductsError_ShouldPropagateException()
     {
         // Arrange
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.GetAllActiveAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception());
+        var expectedException = new Exception("Failed to get products");
+        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
+            .Setup(x => x.GetAllAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expectedException);
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() => _sut.GetAllAsync());
+        var exception = await Assert.ThrowsAsync<Exception>(() => _sut.GetAllProductsAsync(CancellationToken.None));
+        Assert.Equal(expectedException.Message, exception.Message);
+    }
+
+    [Fact]
+    public async Task GetAllProductsAsync_WithPricesError_ShouldPropagateException()
+    {
+        // Arrange
+        var expectedException = new Exception("Failed to get prices");
+        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
+            .Setup(x => x.FindAllAsync(
+                It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expectedException);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() => _sut.GetAllProductsAsync(CancellationToken.None));
+        Assert.Equal(expectedException.Message, exception.Message);
     }
 }

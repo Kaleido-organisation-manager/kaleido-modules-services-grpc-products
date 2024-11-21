@@ -1,39 +1,67 @@
+using Kaleido.Common.Services.Grpc.Constants;
+using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
-using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Delete;
 
 public class DeleteManager : IDeleteManager
 {
-    private readonly ILogger<DeleteManager> _logger;
-    private readonly IProductPriceRepository _productPriceRepository;
-    private readonly IProductRepository _productRepository;
+
+    private readonly IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> _productLifecycleHandler;
+    private readonly IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> _productPriceLifecycleHandler;
 
     public DeleteManager(
-        ILogger<DeleteManager> logger,
-        IProductPriceRepository productPriceRepository,
-        IProductRepository productRepository
-        )
+        IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> productLifecycleHandler,
+        IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> productPriceLifecycleHandler)
     {
-        _logger = logger;
-        _productPriceRepository = productPriceRepository;
-        _productRepository = productRepository;
+        _productLifecycleHandler = productLifecycleHandler;
+        _productPriceLifecycleHandler = productPriceLifecycleHandler;
     }
 
-    public async Task<ProductEntity?> DeleteAsync(string key, CancellationToken cancellationToken = default)
+    public async Task<ManagerResponse> DeleteAsync(Guid key, CancellationToken cancellationToken = default)
     {
-        var productKey = Guid.Parse(key);
-        _logger.LogInformation("Deleting Product with key: {key}", productKey);
-        var deletedEntity = await _productRepository.DeleteAsync(productKey, cancellationToken);
+        var requestedProduct = await _productLifecycleHandler.GetAsync(key, cancellationToken: cancellationToken);
 
-        if (deletedEntity == null)
+        if (requestedProduct == null)
         {
-            return null;
+            return new ManagerResponse(ManagerResponseState.NotFound);
         }
 
-        await _productPriceRepository.DeleteByProductKeyAsync(productKey, cancellationToken);
-        _logger.LogInformation("Product with key: {key} deleted", productKey);
+        var productPrices = await _productPriceLifecycleHandler.FindAllAsync(
+            price => price.ProductKey == key,
+            cancellationToken: cancellationToken);
 
-        return deletedEntity;
+        productPrices = productPrices
+            .Where(price => price.Revision.Status == RevisionStatus.Active)
+            .Where(price => price.Revision.Action != RevisionAction.Deleted);
+
+        var timestamp = DateTime.UtcNow;
+
+        var resultPrices = new List<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>();
+        foreach (var productPrice in productPrices)
+        {
+            var productPriceRevision = new ProductPriceRevisionEntity
+            {
+                Key = productPrice.Key,
+                CreatedAt = timestamp
+            };
+
+            var result = await _productPriceLifecycleHandler.DeleteAsync(productPrice.Key, productPriceRevision, cancellationToken: cancellationToken);
+            if (result != null)
+            {
+                resultPrices.Add(result);
+            }
+        }
+
+        var productRevision = new ProductRevisionEntity
+        {
+            Key = key,
+            CreatedAt = timestamp
+        };
+        var productResult = await _productLifecycleHandler.DeleteAsync(key, productRevision, cancellationToken: cancellationToken);
+
+        return new ManagerResponse(productResult, resultPrices);
     }
 }

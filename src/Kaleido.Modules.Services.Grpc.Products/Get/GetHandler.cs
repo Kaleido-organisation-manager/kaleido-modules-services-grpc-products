@@ -1,54 +1,57 @@
+using AutoMapper;
+using FluentValidation;
 using Grpc.Core;
-using Kaleido.Common.Services.Grpc.Handlers;
-using Kaleido.Common.Services.Grpc.Validators;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Grpc.Products;
+using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Get;
 
-public class GetHandler : IBaseHandler<GetProductRequest, GetProductResponse>
+public class GetHandler : IGetHandler
 {
-    private readonly IGetManager _getProductManager;
-    private readonly ILogger<GetHandler> _logger;
-    public IRequestValidator<GetProductRequest> Validator { get; }
+    private readonly IMapper _mapper;
+    private readonly KeyValidator _validator;
+    private readonly IGetManager _getManager;
 
     public GetHandler(
-            IGetManager getProductManager,
-            ILogger<GetHandler> logger,
-            IRequestValidator<GetProductRequest> validator
-        )
+        IMapper mapper,
+        KeyValidator validator,
+        IGetManager getManager)
     {
-        _getProductManager = getProductManager;
-        _logger = logger;
-        Validator = validator;
+        _mapper = mapper;
+        _validator = validator;
+        _getManager = getManager;
     }
 
-    public async Task<GetProductResponse> HandleAsync(GetProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<ProductResponse> HandleAsync(ProductRequest request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Handling GetProduct request for key: {Key}", request.Key);
-
-        var validationResult = await Validator.ValidateAsync(request, cancellationToken);
-        validationResult.ThrowIfInvalid();
-
-        Product? product;
-
+        ManagerResponse? managerResult;
         try
         {
-            product = await _getProductManager.GetAsync(request.Key, cancellationToken);
+            await _validator.ValidateAndThrowAsync(request.Key, cancellationToken);
+
+            managerResult = await _getManager.GetAsync(Guid.Parse(request.Key), cancellationToken);
         }
-        catch (Exception ex)
+        catch (ValidationException e)
         {
-            _logger.LogError(ex, "An error occurred while retrieving product with key: {Key}", request.Key);
-            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, e.Message, e));
+        }
+        catch (Exception e)
+        {
+            throw new RpcException(new Status(StatusCode.Internal, e.Message, e));
         }
 
-        if (product == null)
+
+        if (managerResult == null || managerResult.Value.State != ManagerResponseState.Success)
         {
             throw new RpcException(new Status(StatusCode.NotFound, $"Product with key {request.Key} not found"));
         }
 
-        return new GetProductResponse
-        {
-            Product = product
-        };
+        var productWithPricesResult = _mapper.Map<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>(managerResult.Value.Product);
+        productWithPricesResult.Entity.Prices = managerResult.Value.ProductPrices ?? [];
+
+        return _mapper.Map<ProductResponse>(productWithPricesResult);
     }
 }

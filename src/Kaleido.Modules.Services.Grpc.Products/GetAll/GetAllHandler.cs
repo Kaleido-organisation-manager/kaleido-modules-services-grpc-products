@@ -1,46 +1,50 @@
+using AutoMapper;
 using Grpc.Core;
-using Kaleido.Grpc.Products;
 using Kaleido.Common.Services.Grpc.Handlers;
-using Kaleido.Common.Services.Grpc.Validators;
+using Kaleido.Common.Services.Grpc.Models;
+using Kaleido.Grpc.Products;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetAll;
 
-public class GetAllHandler : IBaseHandler<GetAllProductsRequest, GetAllProductsResponse>
+public class GetAllHandler : IGetAllHandler
 {
-    private readonly IGetAllManager _getAllProductManager;
+    private readonly IGetAllManager _manager;
+    private readonly IMapper _mapper;
     private readonly ILogger<GetAllHandler> _logger;
-    public IRequestValidator<GetAllProductsRequest> Validator { get; }
 
     public GetAllHandler(
-        IGetAllManager getAllProductManager,
-        ILogger<GetAllHandler> logger,
-        IRequestValidator<GetAllProductsRequest> validator
-        )
+        IGetAllManager manager,
+        IMapper mapper,
+        ILogger<GetAllHandler> logger)
     {
-        _getAllProductManager = getAllProductManager;
+        _manager = manager;
+        _mapper = mapper;
         _logger = logger;
-        Validator = validator;
     }
 
-    public async Task<GetAllProductsResponse> HandleAsync(GetAllProductsRequest request, CancellationToken cancellationToken = default)
+    public async Task<ProductListResponse> HandleAsync(EmptyRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Handling GetAllProducts request");
-
-        var validationResult = await Validator.ValidateAsync(request, cancellationToken);
-        validationResult.ThrowIfInvalid();
-
         try
         {
-            var products = await _getAllProductManager.GetAllAsync(cancellationToken);
-            return new GetAllProductsResponse
+            var result = await _manager.GetAllProductsAsync(cancellationToken);
+
+            var response = new ProductListResponse();
+
+            foreach (var item in result)
             {
-                Products = { products }
-            };
+                var productWithPricesResult = _mapper.Map<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>(item.Product);
+                productWithPricesResult.Entity.Prices = item.ProductPrices ?? [];
+                response.Products.Add(_mapper.Map<ProductResponse>(productWithPricesResult));
+            }
+
+            return response;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while retrieving products");
-            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
+            _logger.LogError(ex, "Error occurred while getting all products");
+            throw new RpcException(new Status(StatusCode.Internal, ex.Message, ex));
         }
     }
 }

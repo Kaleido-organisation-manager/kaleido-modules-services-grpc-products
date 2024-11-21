@@ -1,63 +1,132 @@
 using Grpc.Core;
+using Kaleido.Grpc.Categories;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Builders;
 using Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Fixtures;
-using static Kaleido.Grpc.Products.GrpcProducts;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Integrations.Get;
 
-public class GetIntegrationTests : IClassFixture<InfrastructureFixture>
+[Collection("Infrastructure collection")]
+public class GetIntegrationTests
 {
     private readonly InfrastructureFixture _fixture;
 
     public GetIntegrationTests(InfrastructureFixture fixture)
     {
         _fixture = fixture;
+        _fixture.ClearDatabase().Wait();
     }
 
     [Fact]
-    public async Task Get_ShouldReturnProduct()
+    public async Task GetAsync_ShouldReturnProduct()
     {
-        var createProduct = new CreateProductBuilder()
-            .Build();
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
 
-        var createResponse = await _fixture.Client.CreateProductAsync(new CreateProductRequest { Product = createProduct });
-
-        var request = new GetProductRequest
+        var product = new Product
         {
-            Key = createResponse.Product.Key
+            Name = "Test Product",
+            Description = "Test Description",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
+            }
         };
 
-        var response = await _fixture.Client.GetProductAsync(request);
+        var createResponse = await _fixture.Client.CreateProductAsync(product);
 
-        Assert.NotNull(response);
-        Assert.NotNull(response.Product);
-        Assert.Equal(createResponse.Product.Key, response.Product.Key);
+        // Act
+        var getResponse = await _fixture.Client.GetProductAsync(new ProductRequest { Key = createResponse.Key });
+
+        // Assert
+        Assert.NotNull(getResponse);
+        Assert.Equal(createResponse.Key, getResponse.Key);
+        Assert.Equal("Test Product", getResponse.Product.Name);
+        Assert.Equal("Test Description", getResponse.Product.Description);
+        Assert.Equal(categoryResponse.Key, getResponse.Product.CategoryKey);
+        Assert.Single(getResponse.Product.Prices);
+        Assert.Equal(9, getResponse.Product.Prices[0].Price.Units);
+        Assert.Equal(99, getResponse.Product.Prices[0].Price.Nanos);
     }
 
     [Fact]
-    public async Task Get_ShouldReturnNotFound()
+    public async Task GetAsync_WithMultiplePrices_ShouldReturnAllPrices()
     {
-        var request = new GetProductRequest
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+
+        var product = new Product
         {
-            Key = Guid.NewGuid().ToString()
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
+            }
         };
 
-        var exception = await Assert.ThrowsAsync<RpcException>(async () => await _fixture.Client.GetProductAsync(request));
+        var createResponse = await _fixture.Client.CreateProductAsync(product);
 
-        Assert.Equal(StatusCode.NotFound, exception.StatusCode);
+        // Act
+        var getResponse = await _fixture.Client.GetProductAsync(new ProductRequest { Key = createResponse.Key });
+
+        // Assert
+        Assert.NotNull(getResponse);
+        Assert.Equal(2, getResponse.Product.Prices.Count);
+        Assert.Contains(getResponse.Product.Prices, p => p.Price.Units == 9 && p.Price.Nanos == 99);
+        Assert.Contains(getResponse.Product.Prices, p => p.Price.Units == 19 && p.Price.Nanos == 99);
     }
 
     [Fact]
-    public async Task Get_IncorrectKeyFormat_ShouldReturnBadRequest()
+    public async Task GetAsync_DeletedProduct_ShouldThrowNotFound()
     {
-        var request = new GetProductRequest
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+
+        var product = new Product
         {
-            Key = "invalid-key"
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
-        var exception = await Assert.ThrowsAsync<RpcException>(async () => await _fixture.Client.GetProductAsync(request));
+        var createResponse = await _fixture.Client.CreateProductAsync(product);
+        await _fixture.Client.DeleteProductAsync(new ProductRequest { Key = createResponse.Key });
 
-        Assert.Equal(StatusCode.InvalidArgument, exception.StatusCode);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RpcException>(
+            async () => await _fixture.Client.GetProductAsync(new ProductRequest { Key = createResponse.Key }));
+        Assert.Equal(StatusCode.NotFound, exception.Status.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAsync_NonExistentProduct_ShouldThrowNotFound()
+    {
+        // Arrange
+        var request = new ProductRequest { Key = Guid.NewGuid().ToString() };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RpcException>(
+            async () => await _fixture.Client.GetProductAsync(request));
+        Assert.Equal(StatusCode.NotFound, exception.Status.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("invalid-guid")]
+    public async Task GetAsync_InvalidKey_ShouldThrowInvalidArgument(string key)
+    {
+        // Arrange
+        var request = new ProductRequest { Key = key };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RpcException>(
+            async () => await _fixture.Client.GetProductAsync(request));
+        Assert.Equal(StatusCode.InvalidArgument, exception.Status.StatusCode);
     }
 }

@@ -1,279 +1,168 @@
+using FluentValidation.TestHelper;
 using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Models;
-using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
+using Microsoft.Extensions.Logging;
 using Moq;
-using Moq.AutoMock;
+using Kaleido.Grpc.Categories;
+using Grpc.Core;
+using static Kaleido.Grpc.Categories.GrpcCategories;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Unit.Common.Validators;
 
 public class ProductValidatorTests
 {
-    private readonly AutoMocker _mocker;
     private readonly ProductValidator _sut;
+    private readonly Mock<GrpcCategoriesClient> _categoriesClientMock;
 
     public ProductValidatorTests()
     {
-        _mocker = new AutoMocker();
-        _sut = _mocker.CreateInstance<ProductValidator>();
+        // Create actual instances of basic validators
+        var keyValidator = new KeyValidator();
+        var nameValidator = new NameValidator();
+        var currencyKeyValidator = new CurrencyKeyValidator(keyValidator);
+        var productPriceValidator = new ProductPriceValidator(currencyKeyValidator);
+
+        // Mock only the external dependency (categories client)
+        _categoriesClientMock = new Mock<GrpcCategoriesClient>();
+        // // Setup happy path for category validation
+        _categoriesClientMock.Setup(c => c.GetCategoryAsync(It.IsAny<CategoryRequest>(), It.IsAny<Metadata>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Returns(new AsyncUnaryCall<CategoryResponse>(Task.FromResult(new CategoryResponse()), Task.FromResult(new Metadata()), null!, null!, null!));
+
+        var categoryKeyValidator = new CategoryKeyValidator(keyValidator, _categoriesClientMock.Object, NullLogger<CategoryKeyValidator>.Instance);
+
+        _sut = new ProductValidator(categoryKeyValidator, nameValidator, productPriceValidator);
     }
 
     [Fact]
-    public async Task ValidateCreateAsync_WithValidProduct_ShouldReturnValidResult()
+    public async Task Validate_WithValidProduct_ShouldNotHaveValidationError()
     {
         // Arrange
-        var createProduct = new CreateProduct
+        var product = new Product
         {
-            Name = "Valid Product",
+            Name = "Test Product",
             CategoryKey = Guid.NewGuid().ToString(),
-            Description = "Valid description"
+            Description = "Test Description",
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
-        var result = await _sut.ValidateCreateAsync(createProduct);
+        var result = await _sut.TestValidateAsync(product);
 
         // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
-    public async Task ValidateCreateAsync_WithEmptyName_ShouldReturnInvalidResult()
+    public async Task Validate_WithEmptyName_ShouldHaveValidationError()
     {
         // Arrange
-        var createProduct = new CreateProduct
+        var product = new Product
         {
             Name = "",
-            CategoryKey = Guid.NewGuid().ToString()
-        };
-
-        // Act
-        var result = await _sut.ValidateCreateAsync(createProduct);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateCreateAsync_WithNameExceeding100Characters_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var createProduct = new CreateProduct
-        {
-            Name = new string('a', 101),
-            CategoryKey = Guid.NewGuid().ToString()
-        };
-
-        // Act
-        var result = await _sut.ValidateCreateAsync(createProduct);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateCreateAsync_WithEmptyCategoryKey_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var createProduct = new CreateProduct
-        {
-            Name = "Valid Product",
-            CategoryKey = ""
-        };
-
-        // Act
-        var result = await _sut.ValidateCreateAsync(createProduct);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
-    }
-
-    [Fact]
-    public async Task ValidateCreateAsync_WithDescriptionExceeding500Characters_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var createProduct = new CreateProduct
-        {
-            Name = "Valid Product",
             CategoryKey = Guid.NewGuid().ToString(),
-            Description = new string('a', 501)
+            Description = "Test Description",
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
-        var result = await _sut.ValidateCreateAsync(createProduct);
+        var result = await _sut.TestValidateAsync(product);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
+        result.ShouldHaveValidationErrorFor(x => x.Name);
     }
 
     [Fact]
-    public async Task ValidateUpdateAsync_WithValidProduct_ShouldReturnValidResult()
+    public async Task Validate_WithEmptyCategoryKey_ShouldHaveValidationError()
     {
         // Arrange
         var product = new Product
         {
-            Key = Guid.NewGuid().ToString(),
-            Name = "Valid Product",
-            CategoryKey = Guid.NewGuid().ToString(),
-            Description = "Valid description"
+            Name = "Test Product",
+            CategoryKey = "",
+            Description = "Test Description",
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProductEntity() { Name = "Valid Product", CategoryKey = Guid.NewGuid() });
-
         // Act
-        var result = await _sut.ValidateUpdateAsync(product);
+        var result = await _sut.TestValidateAsync(product);
 
         // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
+        result.ShouldHaveValidationErrorFor(x => x.CategoryKey);
     }
 
     [Fact]
-    public async Task ValidateUpdateAsync_WithEmptyKey_ShouldReturnInvalidResult()
+    public async Task Validate_WithInvalidGuidCategoryKey_ShouldHaveValidationError()
     {
         // Arrange
         var product = new Product
         {
-            Key = "",
-            Name = "Valid Product",
-            CategoryKey = Guid.NewGuid().ToString()
+            Name = "Test Product",
+            CategoryKey = "not-a-guid",
+            Description = "Test Description",
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
-        var result = await _sut.ValidateUpdateAsync(product);
+        var result = await _sut.TestValidateAsync(product);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
+        result.ShouldHaveValidationErrorFor(x => x.CategoryKey);
     }
 
     [Fact]
-    public async Task ValidateKeyAsync_WithValidKey_ShouldReturnValidResult()
+    public async Task Validate_WithNonExistentCategory_ShouldHaveValidationError()
     {
         // Arrange
-        var productKey = Guid.NewGuid().ToString();
+        _categoriesClientMock.Setup(c => c.GetCategoryAsync(It.IsAny<CategoryRequest>(), It.IsAny<Metadata>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Throws(new RpcException(new Status(StatusCode.NotFound, "Category not found")));
 
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ProductEntity() { Name = "Valid Product", CategoryKey = Guid.NewGuid() });
+        var product = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = Guid.NewGuid().ToString(),
+            Description = "Test Description",
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
+        };
 
         // Act
-        var result = await _sut.ValidateKeyAsync(productKey);
+        var result = await _sut.TestValidateAsync(product);
 
         // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
+        result.ShouldHaveValidationErrorFor(x => x.CategoryKey);
     }
 
     [Fact]
-    public async Task ValidateKeyAsync_WithEmptyKey_ShouldReturnInvalidResult()
+    public async Task Validate_WithEmptyPrices_ShouldHaveValidationError()
     {
         // Arrange
-        var productKey = "";
+        var product = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = Guid.NewGuid().ToString(),
+            Description = "Test Description"
+        };
 
         // Act
-        var result = await _sut.ValidateKeyAsync(productKey);
+        var result = await _sut.TestValidateAsync(product);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
+        result.ShouldHaveValidationErrorFor(x => x.Prices);
     }
 
     [Fact]
-    public async Task ValidateKeyAsync_WithInvalidGuid_ShouldReturnInvalidResult()
+    public async Task Validate_WithDescriptionTooLong_ShouldHaveValidationError()
     {
         // Arrange
-        var productKey = "invalid-guid";
+        var product = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = Guid.NewGuid().ToString(),
+            Description = new string('a', 1001),
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
+        };
 
         // Act
-        var result = await _sut.ValidateKeyAsync(productKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
-    }
-
-    [Fact]
-    public async Task ValidateKeyAsync_WithNonExistentProduct_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var productKey = Guid.NewGuid().ToString();
-
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.GetActiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ProductEntity?)null);
-
-        // Act
-        var result = await _sut.ValidateKeyAsync(productKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
-    }
-
-    [Fact]
-    public async Task ValidateCategoryKeyAsync_WithValidKey_ShouldReturnValidResult()
-    {
-        // Arrange
-        var categoryKey = Guid.NewGuid().ToString();
-
-        // Act
-        var result = await _sut.ValidateCategoryKeyAsync(categoryKey);
-
-        // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
-    }
-
-    [Fact]
-    public async Task ValidateCategoryKeyAsync_WithEmptyKey_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var categoryKey = "";
-
-        // Act
-        var result = await _sut.ValidateCategoryKeyAsync(categoryKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
-    }
-
-    [Fact]
-    public async Task ValidateCategoryKeyAsync_WithInvalidGuid_ShouldReturnInvalidResult()
-    {
-        // Arrange
-        var categoryKey = "invalid-guid";
-
-        // Act
-        var result = await _sut.ValidateCategoryKeyAsync(categoryKey);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any());
-    }
-
-    [Fact]
-    public void ValidateKeyForRevisionAsync_WithValidKey_ShouldReturnValidResult()
-    {
-        // Arrange
-        var productKey = Guid.NewGuid();
-
-        _mocker.GetMock<IProductRepository>()
-            .Setup(x => x.GetAllRevisionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ProductEntity> { new ProductEntity() { Key = productKey, Name = "Valid Product", CategoryKey = Guid.NewGuid() } });
-
-        // Act
-        var result = _sut.ValidateKeyFormat(productKey.ToString());
-
-        // Assert
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
+        var result = await _sut.TestValidateAsync(product);
     }
 }

@@ -1,58 +1,76 @@
+using AutoMapper;
+using FluentValidation;
 using Grpc.Core;
 using Kaleido.Grpc.Products;
-using Kaleido.Common.Services.Grpc.Handlers;
-using Kaleido.Common.Services.Grpc.Validators;
+using Kaleido.Common.Services.Grpc.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
+using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
+using Kaleido.Common.Services.Grpc.Exceptions;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Update;
 
-public class UpdateHandler : IBaseHandler<UpdateProductRequest, UpdateProductResponse>
+public class UpdateHandler : IUpdateHandler
 {
+    private readonly IUpdateManager _manager;
+    private readonly IMapper _mapper;
+    private readonly KeyValidator _keyValidator;
+    private readonly ProductValidator _productValidator;
     private readonly ILogger<UpdateHandler> _logger;
-    private readonly IUpdateManager _updateProductManager;
-    public IRequestValidator<UpdateProductRequest> Validator { get; }
 
     public UpdateHandler(
-        ILogger<UpdateHandler> logger,
-        IUpdateManager updateProductManager,
-        IRequestValidator<UpdateProductRequest> validator
-        )
+        IUpdateManager manager,
+        IMapper mapper,
+        KeyValidator keyValidator,
+        ProductValidator productValidator,
+        ILogger<UpdateHandler> logger)
     {
+        _manager = manager;
+        _mapper = mapper;
+        _keyValidator = keyValidator;
+        _productValidator = productValidator;
         _logger = logger;
-        _updateProductManager = updateProductManager;
-        Validator = validator;
     }
 
-    public async Task<UpdateProductResponse> HandleAsync(UpdateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<ProductResponse> HandleAsync(ProductActionRequest request, CancellationToken cancellationToken = default)
     {
-
-        _logger.LogInformation("Handling UpdateProduct request for key: {Key}", request.Key);
-
-        var validationResult = await Validator.ValidateAsync(request, cancellationToken);
-        if (request.Product.Key != request.Key)
-        {
-            validationResult.AddDataConflictError([nameof(Product), nameof(Product.Key)], "Product key in the request body does not match the key in the URL");
-        }
-        validationResult.ThrowIfInvalid();
-
-        Product? updatedProduct = null;
+        ManagerResponse? result;
         try
         {
-            updatedProduct = await _updateProductManager.UpdateAsync(request.Product, cancellationToken);
+            await _keyValidator.ValidateAndThrowAsync(request.Key, cancellationToken);
+            await _productValidator.ValidateAndThrowAsync(request.Product, cancellationToken);
+
+            var key = Guid.Parse(request.Key);
+            var productEntity = _mapper.Map<ProductEntity>(request.Product);
+            var priceEntities = request.Product.Prices
+                .Select(p => _mapper.Map<ProductPriceEntity>(p))
+                .ToList();
+
+            result = await _manager.UpdateAsync(key, productEntity, priceEntities, cancellationToken);
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            _logger.LogError(ex, "Validation error");
+            throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message, ex));
+        }
+        catch (Exception ex) when (ex is EntityNotFoundException or RevisionNotFoundException)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, ex.Message, ex));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while updating product with key: {Key}", request.Key);
-            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
+            _logger.LogError(ex, "Error updating product");
+            throw new RpcException(new Status(StatusCode.Internal, ex.Message, ex));
         }
 
-        if (updatedProduct == null)
+        if (result == null || result?.State != ManagerResponseState.Success)
         {
-            throw new RpcException(new Status(StatusCode.NotFound, $"Product with key: {request.Key} not found"));
+            throw new RpcException(new Status(StatusCode.NotFound, $"Product with key {request.Key} not found"));
         }
 
-        return new UpdateProductResponse
-        {
-            Product = updatedProduct
-        };
+        var productWithPricesResult = _mapper.Map<EntityLifeCycleResult<ProductWithPrices, BaseRevisionEntity>>(result?.Product);
+        productWithPricesResult.Entity.Prices = result?.ProductPrices ?? [];
+
+        return _mapper.Map<ProductResponse>(productWithPricesResult);
     }
 }

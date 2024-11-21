@@ -1,43 +1,42 @@
-
-using Kaleido.Grpc.Products;
-using Kaleido.Modules.Services.Grpc.Products.Common.Mappers.Interfaces;
-using Kaleido.Modules.Services.Grpc.Products.Common.Repositories.Interfaces;
+using Kaleido.Common.Services.Grpc.Constants;
+using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
+using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetAll;
 
 public class GetAllManager : IGetAllManager
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IProductPriceRepository _productPriceRepository;
-    private readonly IProductMapper _productMapper;
-    private readonly ILogger<GetAllManager> _logger;
+    private readonly IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> _productLifecycleHandler;
+    private readonly IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> _priceLifecycleHandler;
 
     public GetAllManager(
-        IProductRepository productRepository,
-        IProductPriceRepository productPriceRepository,
-        IProductMapper productMapper,
-        ILogger<GetAllManager> logger)
+        IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity> productLifecycleHandler,
+        IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity> priceLifecycleHandler)
     {
-        _productRepository = productRepository;
-        _productPriceRepository = productPriceRepository;
-        _productMapper = productMapper;
-        _logger = logger;
+        _productLifecycleHandler = productLifecycleHandler;
+        _priceLifecycleHandler = priceLifecycleHandler;
     }
 
-    public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ManagerResponse>> GetAllProductsAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("GetAllProducts called");
-        var productEntityList = await _productRepository.GetAllActiveAsync(cancellationToken);
+        var products = await _productLifecycleHandler.GetAllAsync(cancellationToken: cancellationToken);
+        products = products.Where(x => x.Revision.Action != RevisionAction.Deleted).ToList();
 
-        var productList = new List<Product>();
+        var result = new List<ManagerResponse>();
 
-        foreach (var productEntity in productEntityList)
+        foreach (var product in products)
         {
-            _logger.LogInformation("Retrieving prices for product with key: {Key}", productEntity.Key);
-            var productPrices = await _productPriceRepository.GetAllActiveByProductKeyAsync(productEntity.Key!, cancellationToken);
-            productList.Add(_productMapper.FromEntities(productEntity, productPrices));
+            var prices = await _priceLifecycleHandler.FindAllAsync(
+                price => price.ProductKey == product.Key,
+                cancellationToken: cancellationToken
+            );
+            var latestPrices = prices
+                .Where(price => price.Revision.Status == RevisionStatus.Active)
+                .Where(price => price.Revision.Action != RevisionAction.Deleted);
+            result.Add(new ManagerResponse(product, latestPrices));
         }
 
-        return productList;
+        return result;
     }
 }
