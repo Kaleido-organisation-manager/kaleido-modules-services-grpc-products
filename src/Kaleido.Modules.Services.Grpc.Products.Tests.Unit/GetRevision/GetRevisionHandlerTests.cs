@@ -59,7 +59,8 @@ public class GetRevisionHandlerTests
 
         var priceEntity = new ProductPriceEntity
         {
-            Value = 9.99f,
+            Units = 9,
+            Nanos = 99,
             CurrencyKey = Guid.NewGuid(),
             ProductKey = productKey
         };
@@ -92,7 +93,8 @@ public class GetRevisionHandlerTests
                     {
                         Price = new ProductPrice
                         {
-                            Value = priceEntity.Value,
+                            Units = priceEntity.Units,
+                            Nanos = priceEntity.Nanos,
                             CurrencyKey = priceEntity.CurrencyKey.ToString()
                         }
                     }
@@ -129,7 +131,8 @@ public class GetRevisionHandlerTests
         Assert.Equal(_testResponse.Product.Description, result.Product.Description);
         Assert.Equal(_testResponse.Product.CategoryKey, result.Product.CategoryKey);
         Assert.Single(result.Product.Prices);
-        Assert.Equal(_testResponse.Product.Prices[0].Price.Value, result.Product.Prices[0].Price.Value);
+        Assert.Equal(_testResponse.Product.Prices[0].Price.Units, result.Product.Prices[0].Price.Units);
+        Assert.Equal(_testResponse.Product.Prices[0].Price.Nanos, result.Product.Prices[0].Price.Nanos);
 
         _mocker.GetMock<IGetRevisionManager>()
             .Verify(x => x.GetRevisionAsync(

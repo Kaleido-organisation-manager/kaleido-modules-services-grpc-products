@@ -51,7 +51,8 @@ public class GetAllManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 9.99f,
+                    Units = 9,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid()
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -93,7 +94,8 @@ public class GetAllManagerTests
         Assert.Equal("Test Product", resultList[0].Product!.Entity.Name);
         Assert.NotNull(resultList[0].ProductPrices);
         Assert.Single(resultList[0].ProductPrices!);
-        Assert.Equal(9.99f, resultList[0].ProductPrices!.First().Entity.Value);
+        Assert.Equal(9, resultList[0].ProductPrices!.First().Entity.Units);
+        Assert.Equal(99, resultList[0].ProductPrices!.First().Entity.Nanos);
 
         _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
             .Verify(x => x.GetAllAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -116,7 +118,8 @@ public class GetAllManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 9.99f,
+                    Units = 9,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid()
                 },
                 Revision = new ProductPriceRevisionEntity

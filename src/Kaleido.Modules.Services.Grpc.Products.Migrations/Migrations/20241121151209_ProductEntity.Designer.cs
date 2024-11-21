@@ -11,9 +11,9 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
 {
-    [DbContext(typeof(ProductPriceEntityDbContext))]
-    [Migration("20241116130822_ProductPriceEntity")]
-    partial class ProductPriceEntity
+    [DbContext(typeof(ProductEntityDbContext))]
+    [Migration("20241121151209_ProductEntity")]
+    partial class ProductEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,25 +25,28 @@ namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Kaleido.Modules.Services.Grpc.Products.Common.Models.ProductPriceEntity", b =>
+            modelBuilder.Entity("Kaleido.Modules.Services.Grpc.Products.Common.Models.ProductEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CurrencyKey")
+                    b.Property<string>("CategoryKey")
                         .IsRequired()
                         .HasColumnType("varchar(36)");
 
-                    b.Property<string>("ProductKey")
-                        .IsRequired()
-                        .HasColumnType("varchar(36)");
+                    b.Property<string>("Description")
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<float>("Value")
-                        .HasColumnType("decimal(10, 2)");
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProductPrices", (string)null);
+                    b.ToTable("Products", (string)null);
                 });
 #pragma warning restore 612, 618
         }

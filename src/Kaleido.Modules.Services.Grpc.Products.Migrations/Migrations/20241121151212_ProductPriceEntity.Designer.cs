@@ -11,9 +11,9 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
 {
-    [DbContext(typeof(ProductEntityDbContext))]
-    [Migration("20241116130819_ProductEntity")]
-    partial class ProductEntity
+    [DbContext(typeof(ProductPriceEntityDbContext))]
+    [Migration("20241121151212_ProductPriceEntity")]
+    partial class ProductPriceEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,28 +25,28 @@ namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Kaleido.Modules.Services.Grpc.Products.Common.Models.ProductEntity", b =>
+            modelBuilder.Entity("Kaleido.Modules.Services.Grpc.Products.Common.Models.ProductPriceEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CategoryKey")
+                    b.Property<string>("CurrencyKey")
                         .IsRequired()
                         .HasColumnType("varchar(36)");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("varchar(255)");
+                    b.Property<int>("Nanos")
+                        .HasColumnType("int");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("ProductKey")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<long>("Units")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("ProductPrices", (string)null);
                 });
 #pragma warning restore 612, 618
         }

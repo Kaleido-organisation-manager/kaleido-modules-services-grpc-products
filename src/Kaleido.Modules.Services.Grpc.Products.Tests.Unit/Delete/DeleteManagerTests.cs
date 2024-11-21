@@ -44,7 +44,8 @@ public class DeleteManagerTests
             {
                 Entity = new ProductPriceEntity
                 {
-                    Value = 10.0f,
+                    Units = 10,
+                    Nanos = 0,
                     CurrencyKey = Guid.NewGuid(),
                     ProductKey = _testProductKey
                 },
@@ -59,7 +60,8 @@ public class DeleteManagerTests
             {
                 Entity = new ProductPriceEntity
                 {
-                    Value = 15.0f,
+                    Units = 15,
+                    Nanos = 0,
                     CurrencyKey = Guid.NewGuid(),
                     ProductKey = _testProductKey
                 },
@@ -194,7 +196,8 @@ public class DeleteManagerTests
         {
             Entity = new ProductPriceEntity
             {
-                Value = 20.0f,
+                Units = 20,
+                Nanos = 0,
                 CurrencyKey = Guid.NewGuid(),
                 ProductKey = _testProductKey
             },

@@ -30,7 +30,7 @@ public class GetIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -46,7 +46,8 @@ public class GetIntegrationTests
         Assert.Equal("Test Description", getResponse.Product.Description);
         Assert.Equal(categoryResponse.Key, getResponse.Product.CategoryKey);
         Assert.Single(getResponse.Product.Prices);
-        Assert.Equal(9.99f, getResponse.Product.Prices[0].Price.Value);
+        Assert.Equal(9, getResponse.Product.Prices[0].Price.Units);
+        Assert.Equal(99, getResponse.Product.Prices[0].Price.Nanos);
     }
 
     [Fact]
@@ -62,8 +63,8 @@ public class GetIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -75,8 +76,8 @@ public class GetIntegrationTests
         // Assert
         Assert.NotNull(getResponse);
         Assert.Equal(2, getResponse.Product.Prices.Count);
-        Assert.Contains(getResponse.Product.Prices, p => p.Price.Value == 9.99f);
-        Assert.Contains(getResponse.Product.Prices, p => p.Price.Value == 19.99f);
+        Assert.Contains(getResponse.Product.Prices, p => p.Price.Units == 9 && p.Price.Nanos == 99);
+        Assert.Contains(getResponse.Product.Prices, p => p.Price.Units == 19 && p.Price.Nanos == 99);
     }
 
     [Fact]
@@ -90,7 +91,7 @@ public class GetIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var createResponse = await _fixture.Client.CreateProductAsync(product);

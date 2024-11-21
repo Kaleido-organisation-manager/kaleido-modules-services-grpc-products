@@ -17,7 +17,8 @@ namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductKey = table.Column<string>(type: "varchar(36)", nullable: false),
-                    Value = table.Column<float>(type: "numeric(10,2)", nullable: false),
+                    Units = table.Column<long>(type: "bigint", nullable: false),
+                    Nanos = table.Column<int>(type: "int", nullable: false),
                     CurrencyKey = table.Column<string>(type: "varchar(36)", nullable: false)
                 },
                 constraints: table =>

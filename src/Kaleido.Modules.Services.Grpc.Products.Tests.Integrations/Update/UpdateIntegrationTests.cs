@@ -30,7 +30,7 @@ public class UpdateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -46,7 +46,7 @@ public class UpdateIntegrationTests
                 CategoryKey = categoryResponse.Key,
                 Prices =
                 {
-                    new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                    new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
                 }
             }
         };
@@ -58,8 +58,10 @@ public class UpdateIntegrationTests
         Assert.NotNull(response);
         Assert.Equal("Updated Product", response.Product.Name);
         Assert.Equal("Updated Description", response.Product.Description);
-        Assert.Single(response.Product.Prices);
-        Assert.Equal(19.99f, response.Product.Prices[0].Price.Value);
+        Assert.Single(response.Product.Prices.Where(x => x.Revision.Action != "Deleted"));
+        Assert.Single(response.Product.Prices.Where(x => x.Revision.Action == "Created"));
+        Assert.Equal(19, response.Product.Prices.Where(x => x.Revision.Action == "Created").First().Price.Units);
+        Assert.Equal(99, response.Product.Prices.Where(x => x.Revision.Action == "Created").First().Price.Nanos);
     }
 
     [Fact]
@@ -73,7 +75,7 @@ public class UpdateIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
@@ -86,7 +88,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Updated Product",
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+                Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
             }
         };
 
@@ -115,8 +117,8 @@ public class UpdateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = currencyKeys[0] },
-                new ProductPrice { Value = 19.99f, CurrencyKey = currencyKeys[1] }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKeys[0] },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = currencyKeys[1] }
             }
         };
 
@@ -129,7 +131,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Test Product",
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = currencyKeys[0] } }
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKeys[0] } }
             }
         };
 
@@ -138,8 +140,9 @@ public class UpdateIntegrationTests
 
         // Assert
         Assert.NotNull(response);
-        Assert.Single(response.Product.Prices);
-        Assert.Equal(currencyKeys[0], response.Product.Prices[0].Price.CurrencyKey);
+        Assert.Equal(2, response.Product.Prices.Count);
+        Assert.Single(response.Product.Prices.Where(x => x.Revision.Action == "Unmodified"));
+        Assert.Equal(currencyKeys[0], response.Product.Prices.Where(x => x.Revision.Action == "Unmodified").First().Price.CurrencyKey);
         Assert.Equal("Deleted", response.Product.Prices.FirstOrDefault(x => x.Price.CurrencyKey == currencyKeys[1])?.Revision.Action);
     }
 
@@ -149,12 +152,8 @@ public class UpdateIntegrationTests
         // Arrange
         var category = new Category { Name = "Test Category" };
         var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
-
-        var currencyKeys = new[]
-        {
-            Guid.NewGuid().ToString(),
-            Guid.NewGuid().ToString()
-        };
+        var firstCurrencyKey = Guid.NewGuid().ToString();
+        var secondCurrencyKey = Guid.NewGuid().ToString();
 
         var createProduct = new Product
         {
@@ -162,8 +161,8 @@ public class UpdateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = currencyKeys[0] },
-                new ProductPrice { Value = 19.99f, CurrencyKey = currencyKeys[1] }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = firstCurrencyKey },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = secondCurrencyKey }
             }
         };
 
@@ -177,7 +176,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Test Product",
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = currencyKeys[0] } }
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = firstCurrencyKey } }
             }
         };
 
@@ -193,8 +192,8 @@ public class UpdateIntegrationTests
                 CategoryKey = categoryResponse.Key,
                 Prices =
                 {
-                    new ProductPrice { Value = 9.99f, CurrencyKey = currencyKeys[0] },
-                    new ProductPrice { Value = 19.99f, CurrencyKey = currencyKeys[1] }
+                    new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = firstCurrencyKey },
+                    new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = secondCurrencyKey }
                 }
             }
         };
@@ -204,8 +203,8 @@ public class UpdateIntegrationTests
 
         // Assert
         Assert.NotNull(response);
+        Assert.Contains(response.Product.Prices, p => p.Price.CurrencyKey == secondCurrencyKey && p.Revision.Action == "Restored");
         Assert.Equal(2, response.Product.Prices.Count);
-        Assert.Contains(response.Product.Prices, p => p.Price.CurrencyKey == currencyKeys[1] && p.Revision.Action == "Restored");
     }
 
     [Fact]
@@ -220,7 +219,7 @@ public class UpdateIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = currencyKey } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKey } }
         };
 
         var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
@@ -232,7 +231,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Test Product",
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = currencyKey } }
+                Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = currencyKey } }
             }
         };
 
@@ -242,7 +241,8 @@ public class UpdateIntegrationTests
         // Assert
         Assert.NotNull(response);
         Assert.Single(response.Product.Prices);
-        Assert.Equal(19.99f, response.Product.Prices[0].Price.Value);
+        Assert.Equal(19, response.Product.Prices[0].Price.Units);
+        Assert.Equal(99, response.Product.Prices[0].Price.Nanos);
         Assert.Equal("Updated", response.Product.Prices[0].Revision.Action);
     }
 
@@ -258,7 +258,7 @@ public class UpdateIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = currencyKey } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKey } }
         };
 
         var createdProduct = await _fixture.Client.CreateProductAsync(createProduct);
@@ -270,7 +270,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Updated Product", // Change product name but keep same price
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = currencyKey } }
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKey } }
             }
         };
 
@@ -280,7 +280,8 @@ public class UpdateIntegrationTests
         // Assert
         Assert.NotNull(response);
         Assert.Single(response.Product.Prices);
-        Assert.Equal(9.99f, response.Product.Prices[0].Price.Value);
+        Assert.Equal(9, response.Product.Prices[0].Price.Units);
+        Assert.Equal(99, response.Product.Prices[0].Price.Nanos);
         Assert.Equal("Unmodified", response.Product.Prices[0].Revision.Action);
     }
 
@@ -298,7 +299,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Test Product",
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
             }
         };
 
@@ -324,7 +325,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Test Product",
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+                Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
             }
         };
 
@@ -347,8 +348,8 @@ public class UpdateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -361,7 +362,7 @@ public class UpdateIntegrationTests
             {
                 Name = "Updated Product",
                 CategoryKey = categoryResponse.Key,
-                Prices = { new ProductPrice { Value = 29.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+                Prices = { new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
             }
         };
 

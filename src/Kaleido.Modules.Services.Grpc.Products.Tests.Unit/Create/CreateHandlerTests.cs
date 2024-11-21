@@ -35,7 +35,7 @@ public class CreateHandlerTests
             Name = "Test Product",
             CategoryKey = Guid.NewGuid().ToString(),
             Description = "Test Description",
-            Prices = { new ProductPrice { Value = 10.0f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         _testProductEntity = new ProductEntity
@@ -59,7 +59,8 @@ public class CreateHandlerTests
 
         var priceEntity = new ProductPriceEntity
         {
-            Value = _testProduct.Prices[0].Value,
+            Units = _testProduct.Prices[0].Units,
+            Nanos = _testProduct.Prices[0].Nanos,
             CurrencyKey = Guid.Parse(_testProduct.Prices[0].CurrencyKey),
             ProductKey = revision.Key
         };

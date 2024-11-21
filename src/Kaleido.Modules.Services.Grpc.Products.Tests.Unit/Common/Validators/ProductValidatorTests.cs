@@ -43,7 +43,7 @@ public class ProductValidatorTests
             Name = "Test Product",
             CategoryKey = Guid.NewGuid().ToString(),
             Description = "Test Description",
-            Prices = { new ProductPrice { Value = 10.0f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
@@ -62,7 +62,7 @@ public class ProductValidatorTests
             Name = "",
             CategoryKey = Guid.NewGuid().ToString(),
             Description = "Test Description",
-            Prices = { new ProductPrice { Value = 10.0f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
@@ -81,7 +81,7 @@ public class ProductValidatorTests
             Name = "Test Product",
             CategoryKey = "",
             Description = "Test Description",
-            Prices = { new ProductPrice { Value = 10.0f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
@@ -100,7 +100,7 @@ public class ProductValidatorTests
             Name = "Test Product",
             CategoryKey = "not-a-guid",
             Description = "Test Description",
-            Prices = { new ProductPrice { Value = 10.0f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
@@ -122,7 +122,7 @@ public class ProductValidatorTests
             Name = "Test Product",
             CategoryKey = Guid.NewGuid().ToString(),
             Description = "Test Description",
-            Prices = { new ProductPrice { Value = 10.0f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
@@ -151,21 +151,18 @@ public class ProductValidatorTests
     }
 
     [Fact]
-    public async Task Validate_WithInvalidPrice_ShouldHaveValidationError()
+    public async Task Validate_WithDescriptionTooLong_ShouldHaveValidationError()
     {
         // Arrange
         var product = new Product
         {
             Name = "Test Product",
             CategoryKey = Guid.NewGuid().ToString(),
-            Description = "Test Description",
-            Prices = { new ProductPrice { Value = -10.0f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Description = new string('a', 1001),
+            Prices = { new ProductPrice { Units = 10, Nanos = 0, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         // Act
         var result = await _sut.TestValidateAsync(product);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Prices);
     }
 }

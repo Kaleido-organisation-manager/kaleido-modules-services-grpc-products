@@ -1,5 +1,6 @@
 using Kaleido.Common.Services.Grpc.Constants;
 using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetAllFiltered;
@@ -29,23 +30,21 @@ public class GetAllFilteredManager : IGetAllFilteredManager
             cancellationToken: cancellationToken
         );
 
-        products = products.GroupBy(v => v.Key)
-            .Select(v => v.OrderByDescending(x => x.Revision.Revision).First())
-            .Where(v => v.Revision.Action != RevisionAction.Deleted)
-            .ToList();
+        var nonDeletedProducts = products
+            .Where(product => product.Revision.Status == RevisionStatus.Active)
+            .Where(product => product.Revision.Action != RevisionAction.Deleted);
 
         var result = new List<ManagerResponse>();
 
-        foreach (var product in products)
+        foreach (var product in nonDeletedProducts)
         {
             var prices = await _priceLifecycleHandler.FindAllAsync(
                 price => price.ProductKey == product.Key,
                 cancellationToken: cancellationToken
             );
-            var latestPrices = prices.GroupBy(x => x.Key)
-                .Select(x => x.OrderByDescending(y => y.Revision.Revision).First())
-                .Where(r => r.Revision.Action != RevisionAction.Deleted)
-                .ToList();
+            var latestPrices = prices
+                .Where(price => price.Revision.Status == RevisionStatus.Active)
+                .Where(price => price.Revision.Action != RevisionAction.Deleted);
             result.Add(new ManagerResponse(product, latestPrices));
         }
 

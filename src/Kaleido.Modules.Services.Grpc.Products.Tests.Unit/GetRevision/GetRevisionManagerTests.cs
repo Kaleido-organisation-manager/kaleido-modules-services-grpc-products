@@ -51,7 +51,8 @@ public class GetRevisionManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 9.99f,
+                    Units = 9,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid()
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -93,7 +94,8 @@ public class GetRevisionManagerTests
         Assert.Equal(_testProductRevision.Entity.Name, result.Product?.Entity.Name);
         Assert.NotNull(result.ProductPrices);
         Assert.Single(result.ProductPrices!);
-        Assert.Equal(_testPriceRevisions[0].Entity.Value, result.ProductPrices!.First().Entity.Value);
+        Assert.Equal(_testPriceRevisions[0].Entity.Units, result.ProductPrices!.First().Entity.Units);
+        Assert.Equal(_testPriceRevisions[0].Entity.Nanos, result.ProductPrices!.First().Entity.Nanos);
     }
 
     [Fact]

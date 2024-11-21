@@ -42,7 +42,8 @@ public class UpdateManagerTests
             new()
             {
                 ProductKey = _testProductKey,
-                Value = 29.99f,
+                Units = 29,
+                Nanos = 99,
                 CurrencyKey = Guid.NewGuid()
             }
         };
@@ -174,7 +175,8 @@ public class UpdateManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 19.99f,
+                    Units = 19,
+                    Nanos = 99,
                     CurrencyKey = _testPrices[0].CurrencyKey
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -222,7 +224,8 @@ public class UpdateManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 19.99f,
+                    Units = 19,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid() // Different currency key
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -266,7 +269,8 @@ public class UpdateManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 19.99f,
+                    Units = 19,
+                    Nanos = 99,
                     CurrencyKey = _testPrices[0].CurrencyKey
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -291,12 +295,13 @@ public class UpdateManagerTests
         // Assert
         Assert.Equal(ManagerResponseState.Success, result.State);
         Assert.NotNull(result.ProductPrices);
-        Assert.Contains(result.ProductPrices!.Select(p => p.Entity), p => p.Value == 29.99f);
+        Assert.NotEmpty(result.ProductPrices!);
+        Assert.Contains(result.ProductPrices!.Select(p => p.Entity), p => p.Units == _testPrices[0].Units && p.Nanos == _testPrices[0].Nanos);
 
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Verify(x => x.UpdateAsync(
                 It.IsAny<Guid>(),
-                It.Is<ProductPriceEntity>(p => p.Value == 29.99f),
+                It.Is<ProductPriceEntity>(p => p.Units == _testPrices[0].Units && p.Nanos == _testPrices[0].Nanos),
                 It.IsAny<ProductPriceRevisionEntity>(),
                 It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -312,7 +317,8 @@ public class UpdateManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = _testPrices[0].Value,
+                    Units = _testPrices[0].Units,
+                    Nanos = _testPrices[0].Nanos,
                     CurrencyKey = _testPrices[0].CurrencyKey
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -356,7 +362,8 @@ public class UpdateManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = _testPrices[0].Value,
+                    Units = _testPrices[0].Units,
+                    Nanos = _testPrices[0].Nanos,
                     CurrencyKey = _testPrices[0].CurrencyKey
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -395,7 +402,8 @@ public class UpdateManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 15.99f,
+                    Units = 15,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid()
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -410,7 +418,8 @@ public class UpdateManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 19.99f,
+                    Units = 19,
+                    Nanos = 99,
                     CurrencyKey = _testPrices[0].CurrencyKey
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -435,7 +444,8 @@ public class UpdateManagerTests
             new() // Create new price
             {
                 ProductKey = _testProductKey,
-                Value = 39.99f,
+                Units = 39,
+                Nanos = 99,
                 CurrencyKey = Guid.NewGuid()
             }
         };

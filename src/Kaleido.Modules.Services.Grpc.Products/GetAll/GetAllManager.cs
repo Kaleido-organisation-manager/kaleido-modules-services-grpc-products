@@ -1,5 +1,6 @@
 using Kaleido.Common.Services.Grpc.Constants;
 using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
+using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 
 namespace Kaleido.Modules.Services.Grpc.Products.GetAll;
@@ -30,8 +31,9 @@ public class GetAllManager : IGetAllManager
                 price => price.ProductKey == product.Key,
                 cancellationToken: cancellationToken
             );
-            var latestPrices = prices.GroupBy(x => x.Key).Select(x => x.OrderByDescending(y => y.Revision.Revision).First())
-                .Where(r => r.Revision.Action != RevisionAction.Deleted).ToList();
+            var latestPrices = prices
+                .Where(price => price.Revision.Status == RevisionStatus.Active)
+                .Where(price => price.Revision.Action != RevisionAction.Deleted);
             result.Add(new ManagerResponse(product, latestPrices));
         }
 

@@ -38,14 +38,14 @@ public class GetAllIntegrationTests
         {
             Name = "Test Product 1",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Test Product 2",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.CreateProductAsync(product1);
@@ -72,14 +72,14 @@ public class GetAllIntegrationTests
         {
             Name = "Test Product 1",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Test Product 2",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var createResponse1 = await _fixture.Client.CreateProductAsync(product1);
@@ -109,8 +109,8 @@ public class GetAllIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -124,56 +124,69 @@ public class GetAllIntegrationTests
         Assert.Single(response.Products);
         var returnedProduct = response.Products[0];
         Assert.Equal(2, returnedProduct.Product.Prices.Count);
-        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Value == 9.99f);
-        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Value == 19.99f);
+        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Units == 9 && p.Price.Nanos == 99);
+        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Units == 19 && p.Price.Nanos == 99);
     }
 
-    // TODO: Uncomment when the UpdateProduct method is implemented
-    // [Fact]
-    // public async Task GetAllAsync_WithDeletedPrices_ShouldNotReturnDeletedPrices()
-    // {
-    //     // Arrange
-    //     var category = new Category { Name = "Test Category" };
-    //     var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
+    [Fact]
+    public async Task GetAllAsync_WithDeletedPrices_ShouldNotReturnDeletedPrices()
+    {
+        // Arrange
+        var category = new Category { Name = "Test Category" };
+        var categoryResponse = await _fixture.CategoriesClient.CreateCategoryAsync(category);
 
-    //     var product = new Product
-    //     {
-    //         Name = "Test Product",
-    //         CategoryKey = categoryResponse.Key,
-    //         Prices =
-    //         {
-    //             new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() }
-    //         }
-    //     };
+        var product = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
+            }
+        };
 
-    //     var createResponse = await _fixture.Client.CreateProductAsync(product);
+        var createResponse = await _fixture.Client.CreateProductAsync(product);
 
-    //     // Update product with new price (which effectively "deletes" the old price)
-    //     var updateProduct = new Product
-    //     {
-    //         Name = "Test Product",
-    //         CategoryKey = categoryResponse.Key,
-    //         Prices =
-    //         {
-    //             new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
-    //         }
-    //     };
-    //     await _fixture.Client.UpdateProductAsync(new UpdateProductRequest
-    //     {
-    //         Key = createResponse.Key,
-    //         Product = updateProduct
-    //     });
+        // Verify product was created successfully
+        var afterCreateResponse = await _fixture.Client.GetAllProductsAsync(new Kaleido.Grpc.Products.EmptyRequest());
+        Assert.Single(afterCreateResponse.Products);
+        Assert.Single(afterCreateResponse.Products[0].Product.Prices);
 
-    //     // Act
-    //     var response = await _fixture.Client.GetAllProductsAsync(new EmptyRequest());
+        // Update product with new price
+        var updateProduct = new Product
+        {
+            Name = "Test Product",
+            CategoryKey = categoryResponse.Key,
+            Prices =
+            {
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
+            }
+        };
 
-    //     // Assert
-    //     Assert.NotNull(response);
-    //     Assert.Single(response.Products);
-    //     var returnedProduct = response.Products[0];
-    //     Assert.Single(returnedProduct.Product.Prices);
-    //     Assert.Equal(19.99f, returnedProduct.Product.Prices[0].Price.Value);
-    // }
+        var updateResponse = await _fixture.Client.UpdateProductAsync(new ProductActionRequest
+        {
+            Key = createResponse.Key,
+            Product = updateProduct
+        });
+
+        // Verify product still exists after update
+        var afterUpdateResponse = await _fixture.Client.GetAllProductsAsync(new Kaleido.Grpc.Products.EmptyRequest());
+        Assert.Single(afterUpdateResponse.Products);
+        Assert.Single(afterUpdateResponse.Products[0].Product.Prices);
+        Assert.Equal(19, afterUpdateResponse.Products[0].Product.Prices[0].Price.Units);
+        Assert.Equal(99, afterUpdateResponse.Products[0].Product.Prices[0].Price.Nanos);
+
+        // Act
+        var response = await _fixture.Client.GetAllProductsAsync(new Kaleido.Grpc.Products.EmptyRequest());
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.Single(response.Products);
+        var returnedProduct = response.Products[0];
+        Assert.Single(returnedProduct.Product.Prices);
+        Assert.Equal(19, returnedProduct.Product.Prices[0].Price.Units);
+        Assert.Equal(99, returnedProduct.Product.Prices[0].Price.Nanos);
+    }
 
     [Fact]
     public async Task GetAllAsync_WithProductsInDifferentCategories_ShouldReturnAllProducts()
@@ -188,14 +201,14 @@ public class GetAllIntegrationTests
         {
             Name = "Product in Category 1",
             CategoryKey = categoryResponse1.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Product in Category 2",
             CategoryKey = categoryResponse2.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.CreateProductAsync(product1);

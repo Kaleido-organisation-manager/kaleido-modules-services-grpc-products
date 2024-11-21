@@ -30,12 +30,12 @@ public class DeleteManager : IDeleteManager
         }
 
         var productPrices = await _productPriceLifecycleHandler.FindAllAsync(
-            link => link.ProductKey == key,
+            price => price.ProductKey == key,
             cancellationToken: cancellationToken);
 
-        productPrices = productPrices.GroupBy(l => l.Key)
-            .Select(l => l.OrderByDescending(x => x.Revision.Revision).First())
-            .Where(l => l.Revision.Action != RevisionAction.Deleted);
+        productPrices = productPrices
+            .Where(price => price.Revision.Status == RevisionStatus.Active)
+            .Where(price => price.Revision.Action != RevisionAction.Deleted);
 
         var timestamp = DateTime.UtcNow;
 

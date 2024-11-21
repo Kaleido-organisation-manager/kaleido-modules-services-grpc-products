@@ -6,6 +6,7 @@ using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Validators;
 using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
+using Kaleido.Common.Services.Grpc.Exceptions;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Update;
 
@@ -47,10 +48,14 @@ public class UpdateHandler : IUpdateHandler
 
             result = await _manager.UpdateAsync(key, productEntity, priceEntities, cancellationToken);
         }
-        catch (ValidationException ex)
+        catch (FluentValidation.ValidationException ex)
         {
             _logger.LogError(ex, "Validation error");
             throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message, ex));
+        }
+        catch (Exception ex) when (ex is EntityNotFoundException or RevisionNotFoundException)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, ex.Message, ex));
         }
         catch (Exception ex)
         {

@@ -17,6 +17,12 @@
     <ProjectReference Include="..\Kaleido.Modules.Services.Grpc.Products\Kaleido.Modules.Services.Grpc.Products.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Migrations/*.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">

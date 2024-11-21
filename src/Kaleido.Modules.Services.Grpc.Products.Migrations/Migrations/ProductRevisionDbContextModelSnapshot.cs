@@ -45,6 +45,9 @@ namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
                     b.Property<int>("Revision")
                         .HasColumnType("int");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Key");

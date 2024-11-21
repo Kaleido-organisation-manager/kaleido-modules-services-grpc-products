@@ -53,7 +53,8 @@ public class DeleteHandlerTests
 
         var priceEntity = new ProductPriceEntity
         {
-            Value = 10.0f,
+            Units = 10,
+            Nanos = 0,
             CurrencyKey = Guid.NewGuid(),
             ProductKey = productKey
         };
@@ -76,7 +77,7 @@ public class DeleteHandlerTests
 
         var price = new ProductPriceResponse
         {
-            Price = new ProductPrice { Value = priceEntity.Value, CurrencyKey = priceEntity.CurrencyKey.ToString() },
+            Price = new ProductPrice { Units = priceEntity.Units, Nanos = priceEntity.Nanos, CurrencyKey = priceEntity.CurrencyKey.ToString() },
             Revision = new BaseRevision
             {
                 Revision = 1,

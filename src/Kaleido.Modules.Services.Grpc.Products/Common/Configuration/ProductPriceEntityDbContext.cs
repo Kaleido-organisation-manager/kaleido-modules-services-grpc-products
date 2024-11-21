@@ -21,7 +21,8 @@ public class ProductPriceEntityDbContext : DbContext, IKaleidoDbContext<ProductP
 
             entity.Property(x => x.ProductKey).IsRequired().HasColumnType("varchar(36)");
             entity.Property(x => x.CurrencyKey).IsRequired().HasColumnType("varchar(36)");
-            entity.Property(x => x.Value).IsRequired().HasColumnType("decimal(10, 2)");
+            entity.Property(x => x.Units).IsRequired().HasColumnType("bigint");
+            entity.Property(x => x.Nanos).IsRequired().HasColumnType("int");
 
             DefaultOnModelCreatingMethod.ForBaseEntity(entity);
         });

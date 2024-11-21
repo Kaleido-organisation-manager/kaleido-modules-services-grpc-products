@@ -34,7 +34,8 @@ public class CreateManager : ICreateManager
         {
             CurrencyKey = Guid.Parse(price.CurrencyKey),
             ProductKey = productRevision.Key,
-            Value = price.Value
+            Units = price.Units,
+            Nanos = price.Nanos
         });
 
         var resultPrices = new List<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>();

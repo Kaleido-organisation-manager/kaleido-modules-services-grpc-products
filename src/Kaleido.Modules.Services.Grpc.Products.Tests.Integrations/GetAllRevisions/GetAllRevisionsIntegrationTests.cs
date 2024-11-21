@@ -31,8 +31,8 @@ public class GetAllRevisionsIntegrationTests
             ImageUrl = "https://example.com/image.jpg",
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -46,9 +46,15 @@ public class GetAllRevisionsIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 29.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
+
+        await _fixture.Client.UpdateProductAsync(new ProductActionRequest
+        {
+            Key = createdProduct.Key,
+            Product = updatedProduct
+        });
 
         // Act
         var request = new ProductRequest { Key = createdProduct.Key };
@@ -73,7 +79,9 @@ public class GetAllRevisionsIntegrationTests
         Assert.Equal("Updated Product", latestRevision.Product.Name);
         Assert.Equal("Updated Description", latestRevision.Product.Description);
         Assert.Equal(categoryResponse.Key, latestRevision.Product.CategoryKey);
-        Assert.Single(latestRevision.Product.Prices);
+        Assert.Equal(3, latestRevision.Product.Prices.Count);
+        Assert.Equal(2, latestRevision.Product.Prices.Where(x => x.Revision.Action == "Deleted").Count());
+        Assert.Single(latestRevision.Product.Prices.Where(x => x.Revision.Action == "Created"));
         Assert.Equal("Updated", latestRevision.Revision.Action);
     }
 
@@ -102,7 +110,7 @@ public class GetAllRevisionsIntegrationTests
         {
             Name = "Test Product to Delete",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var createdProduct = await _fixture.Client.CreateProductAsync(product);
@@ -132,8 +140,8 @@ public class GetAllRevisionsIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -143,7 +151,7 @@ public class GetAllRevisionsIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 29.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.UpdateProductAsync(new ProductActionRequest
@@ -158,8 +166,8 @@ public class GetAllRevisionsIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 29.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 39.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 39, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -186,14 +194,16 @@ public class GetAllRevisionsIntegrationTests
         Assert.All(initialRevision.Product.Prices, p => Assert.Equal("Created", p.Revision.Action));
 
         // Check middle revision
-        Assert.Single(middleRevision.Product.Prices);
+        Assert.Equal(3, middleRevision.Product.Prices.Count);
         Assert.Equal("Updated", middleRevision.Revision.Action);
-        Assert.Equal(29.99f, middleRevision.Product.Prices[0].Price.Value);
+        Assert.Equal(29, middleRevision.Product.Prices.Where(x => x.Revision.Action == "Created").First().Price.Units);
+        Assert.Equal(99, middleRevision.Product.Prices.Where(x => x.Revision.Action == "Created").First().Price.Nanos);
 
         // Check latest revision
-        Assert.Equal(2, latestRevision.Product.Prices.Count);
+        Assert.Equal(3, latestRevision.Product.Prices.Count);
         Assert.Equal("Updated", latestRevision.Revision.Action);
-        Assert.Contains(latestRevision.Product.Prices, p => p.Price.Value == 39.99f);
+        Assert.Equal(2, latestRevision.Product.Prices.Where(x => x.Revision.Action == "Created").Count());
+        Assert.Single(latestRevision.Product.Prices.Where(x => x.Revision.Action == "Deleted"));
     }
 
     [Theory]

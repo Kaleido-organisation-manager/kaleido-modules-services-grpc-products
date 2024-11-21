@@ -10,6 +10,6 @@ public class CurrencyKeyValidator : AbstractValidator<string>
     {
         _keyValidator = keyValidator;
 
-        RuleFor(x => x).NotNull().NotEmpty().Must(x => _keyValidator.Validate(x).IsValid);
+        RuleFor(x => x).SetValidator(_keyValidator);
     }
 }

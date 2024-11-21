@@ -49,7 +49,8 @@ public class GetAllHandlerTests
 
         var priceEntity = new ProductPriceEntity
         {
-            Value = 9.99f,
+            Units = 9,
+            Nanos = 99,
             CurrencyKey = Guid.NewGuid(),
             ProductKey = productRevision.Key
         };
@@ -88,7 +89,8 @@ public class GetAllHandlerTests
                             {
                                 Price = new ProductPrice
                                 {
-                                    Value = priceEntity.Value,
+                                    Units = priceEntity.Units,
+                                    Nanos = priceEntity.Nanos,
                                     CurrencyKey = priceEntity.CurrencyKey.ToString()
                                 }
                             }
@@ -127,7 +129,8 @@ public class GetAllHandlerTests
         Assert.Equal(_testResponse.Products[0].Product.Description, result.Products[0].Product.Description);
         Assert.Equal(_testResponse.Products[0].Product.CategoryKey, result.Products[0].Product.CategoryKey);
         Assert.Single(result.Products[0].Product.Prices);
-        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Value, result.Products[0].Product.Prices[0].Price.Value);
+        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Units, result.Products[0].Product.Prices[0].Price.Units);
+        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Nanos, result.Products[0].Product.Prices[0].Price.Nanos);
 
         _mocker.GetMock<IGetAllManager>()
             .Verify(x => x.GetAllProductsAsync(It.IsAny<CancellationToken>()), Times.Once);

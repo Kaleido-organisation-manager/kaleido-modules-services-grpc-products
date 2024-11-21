@@ -5,7 +5,8 @@ namespace Kaleido.Modules.Services.Grpc.Products.Common.Models;
 public class ProductPriceEntity : BaseEntity
 {
     public Guid ProductKey { get; set; }
-    public float Value { get; set; }
+    public int Units { get; set; }
+    public int Nanos { get; set; }
     public Guid CurrencyKey { get; set; }
 
     public override bool Equals(object? obj)
@@ -13,12 +14,13 @@ public class ProductPriceEntity : BaseEntity
         return base.Equals(obj) &&
             obj is ProductPriceEntity entity &&
             ProductKey == entity.ProductKey &&
-            Value == entity.Value &&
+            Units == entity.Units &&
+            Nanos == entity.Nanos &&
             CurrencyKey == entity.CurrencyKey;
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(base.GetHashCode(), ProductKey, Value, CurrencyKey);
+        return HashCode.Combine(base.GetHashCode(), ProductKey, Units, Nanos, CurrencyKey);
     }
 }

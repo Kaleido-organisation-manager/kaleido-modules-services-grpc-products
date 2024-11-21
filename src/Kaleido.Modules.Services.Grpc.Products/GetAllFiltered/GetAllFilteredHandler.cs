@@ -14,14 +14,14 @@ public class GetAllFilteredHandler : IGetAllFilteredHandler
     private readonly IGetAllFilteredManager _manager;
     private readonly IMapper _mapper;
     private readonly ILogger<GetAllFilteredHandler> _logger;
-    private readonly KeyValidator _keyValidator;
+    private readonly CategoryKeyValidator _keyValidator;
     private readonly NameValidator _nameValidator;
 
     public GetAllFilteredHandler(
         IGetAllFilteredManager manager,
         IMapper mapper,
         ILogger<GetAllFilteredHandler> logger,
-        KeyValidator keyValidator,
+        CategoryKeyValidator keyValidator,
         NameValidator nameValidator)
     {
         _manager = manager;
@@ -39,7 +39,7 @@ public class GetAllFilteredHandler : IGetAllFilteredHandler
         {
             if (!string.IsNullOrEmpty(request.CategoryKey))
             {
-                _keyValidator.ValidateAndThrow(request.CategoryKey);
+                await _keyValidator.ValidateAndThrowAsync(request.CategoryKey, cancellationToken);
             }
             if (!string.IsNullOrEmpty(request.Name))
             {

@@ -36,7 +36,8 @@ public class CreateIntegrationTests
             {
                 new ProductPrice
                 {
-                    Value = 9.99f,
+                    Units = 9,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid().ToString()
                 }
             }
@@ -54,7 +55,8 @@ public class CreateIntegrationTests
         Assert.Equal("Created", response.Revision.Action);
         Assert.Equal(1, response.Revision.Revision);
         Assert.Single(response.Product.Prices);
-        Assert.Equal(9.99f, response.Product.Prices[0].Price.Value);
+        Assert.Equal(9, response.Product.Prices[0].Price.Units);
+        Assert.Equal(99, response.Product.Prices[0].Price.Nanos);
     }
 
     [Fact]
@@ -71,8 +73,8 @@ public class CreateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -82,8 +84,8 @@ public class CreateIntegrationTests
         // Assert
         Assert.NotNull(response);
         Assert.Equal(2, response.Product.Prices.Count);
-        Assert.Contains(response.Product.Prices, p => p.Price.Value == 9.99f);
-        Assert.Contains(response.Product.Prices, p => p.Price.Value == 19.99f);
+        Assert.Contains(response.Product.Prices, p => p.Price.Units == 9 && p.Price.Nanos == 99);
+        Assert.Contains(response.Product.Prices, p => p.Price.Units == 19 && p.Price.Nanos == 99);
     }
 
     [Fact]
@@ -99,7 +101,7 @@ public class CreateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -127,7 +129,7 @@ public class CreateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -150,7 +152,7 @@ public class CreateIntegrationTests
             CategoryKey = categoryKey,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -161,10 +163,10 @@ public class CreateIntegrationTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    [InlineData(-9.99)]
-    public async Task CreateAsync_InvalidPriceValue_ShouldThrow(float price)
+    [InlineData(-1, 0)]
+    [InlineData(0, -1)]
+    [InlineData(-1, -1)]
+    public async Task CreateAsync_InvalidPriceValue_ShouldThrow(int units, int nanos)
     {
         // Arrange
         var category = new Category { Name = "Test Category" };
@@ -176,7 +178,7 @@ public class CreateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = price, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = units, Nanos = nanos, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -202,7 +204,7 @@ public class CreateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = currencyKey }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = currencyKey }
             }
         };
 
@@ -226,7 +228,7 @@ public class CreateIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 

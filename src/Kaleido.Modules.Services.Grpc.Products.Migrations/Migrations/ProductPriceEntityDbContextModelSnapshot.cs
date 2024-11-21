@@ -31,12 +31,15 @@ namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(36)");
 
+                    b.Property<int>("Nanos")
+                        .HasColumnType("int");
+
                     b.Property<string>("ProductKey")
                         .IsRequired()
                         .HasColumnType("varchar(36)");
 
-                    b.Property<float>("Value")
-                        .HasColumnType("decimal(10, 2)");
+                    b.Property<long>("Units")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 

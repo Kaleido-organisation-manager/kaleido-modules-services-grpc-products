@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
 {
     [DbContext(typeof(ProductRevisionDbContext))]
-    [Migration("20241116130821_ProductRevision")]
+    [Migration("20241121151211_ProductRevision")]
     partial class ProductRevision
     {
         /// <inheritdoc />
@@ -47,6 +47,9 @@ namespace Kaleido.Modules.Services.Grpc.Products.Migrations.Migrations
 
                     b.Property<int>("Revision")
                         .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

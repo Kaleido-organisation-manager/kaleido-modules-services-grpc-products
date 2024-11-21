@@ -11,7 +11,8 @@ public class ProductPriceValidator : AbstractValidator<ProductPrice>
     {
         _currencyKeyValidator = currencyKeyValidator;
 
-        RuleFor(x => x.CurrencyKey).NotNull().NotEmpty().MustAsync(async (x, cancellationToken) => (await _currencyKeyValidator.ValidateAsync(x, cancellationToken)).IsValid);
-        RuleFor(x => x.Value).GreaterThan(0);
+        RuleFor(x => x.CurrencyKey).SetValidator(_currencyKeyValidator);
+        RuleFor(x => x.Units).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Nanos).GreaterThanOrEqualTo(0).LessThan(100);
     }
 }

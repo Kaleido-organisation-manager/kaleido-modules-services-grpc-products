@@ -14,7 +14,8 @@ message Product {
 
 message ProductPrice {
   string currencyKey = 1;
-  float value = 2;
+  int32 units = 2;
+  int32 nanos = 3;
 }
 
 message ProductRequest {
@@ -33,6 +34,7 @@ message BaseRevision {
     int32 revision = 2;
     string action = 3;
     google.protobuf.Timestamp createdAt = 4;
+    string status = 5;
 }
 
 message ProductResponse {

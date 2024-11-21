@@ -70,7 +70,8 @@ public class GetAllRevisionsManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 9.99f,
+                    Units = 9,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid()
                 },
                 Revision = new ProductPriceRevisionEntity
@@ -86,7 +87,8 @@ public class GetAllRevisionsManagerTests
                 Entity = new ProductPriceEntity
                 {
                     ProductKey = _testProductKey,
-                    Value = 19.99f,
+                    Units = 19,
+                    Nanos = 99,
                     CurrencyKey = Guid.NewGuid()
                 },
                 Revision = new ProductPriceRevisionEntity

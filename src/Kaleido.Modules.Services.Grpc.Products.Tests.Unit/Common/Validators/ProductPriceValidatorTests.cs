@@ -22,7 +22,8 @@ public class ProductPriceValidatorTests
         // Arrange
         var price = new ProductPrice
         {
-            Value = 10.0f,
+            Units = 10,
+            Nanos = 0,
             CurrencyKey = Guid.NewGuid().ToString()
         };
 
@@ -39,7 +40,8 @@ public class ProductPriceValidatorTests
         // Arrange
         var price = new ProductPrice
         {
-            Value = -10.0f,
+            Units = -10,
+            Nanos = 0,
             CurrencyKey = Guid.NewGuid().ToString()
         };
 
@@ -47,24 +49,7 @@ public class ProductPriceValidatorTests
         var result = await _sut.TestValidateAsync(price);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Value);
-    }
-
-    [Fact]
-    public async Task Validate_WithZeroValue_ShouldHaveValidationError()
-    {
-        // Arrange
-        var price = new ProductPrice
-        {
-            Value = 0,
-            CurrencyKey = Guid.NewGuid().ToString()
-        };
-
-        // Act
-        var result = await _sut.TestValidateAsync(price);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Value);
+        result.ShouldHaveValidationErrorFor(x => x.Units);
     }
 
     [Fact]
@@ -73,7 +58,8 @@ public class ProductPriceValidatorTests
         // Arrange
         var price = new ProductPrice
         {
-            Value = 10.0f,
+            Units = 10,
+            Nanos = 0,
             CurrencyKey = ""
         };
 
@@ -90,7 +76,8 @@ public class ProductPriceValidatorTests
         // Arrange
         var price = new ProductPrice
         {
-            Value = 10.0f,
+            Units = 10,
+            Nanos = 0,
             CurrencyKey = "not-a-guid"
         };
 
@@ -99,5 +86,52 @@ public class ProductPriceValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.CurrencyKey);
+    }
+
+    [Theory]
+    [InlineData(-10, 0)]
+    [InlineData(0, -1)]
+    [InlineData(0, 100)]
+    public async Task Validate_WithInvalidPrice_ShouldHaveValidationError(int units, int nanos)
+    {
+        // Arrange
+        var price = new ProductPrice
+        {
+            Units = units,
+            Nanos = nanos,
+            CurrencyKey = Guid.NewGuid().ToString()
+        };
+
+        // Act
+        var result = await _sut.TestValidateAsync(price);
+
+        // Assert
+        if (units < 0)
+        {
+            result.ShouldHaveValidationErrorFor(x => x.Units);
+        }
+        else if (nanos < 0 || nanos >= 100)
+        {
+            result.ShouldHaveValidationErrorFor(x => x.Nanos);
+        }
+    }
+
+
+    [Fact]
+    public async Task Validate_WithZeroPrice_ShouldBeValid()
+    {
+        // Arrange
+        var price = new ProductPrice
+        {
+            Units = 0,
+            Nanos = 0,
+            CurrencyKey = Guid.NewGuid().ToString()
+        };
+
+        // Act
+        var result = await _sut.TestValidateAsync(price);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

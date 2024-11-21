@@ -35,8 +35,9 @@ public class GetManager : IGetManager
             cancellationToken: cancellationToken
         );
 
-        var latestPrices = prices.GroupBy(x => x.Key).Select(x => x.OrderByDescending(y => y.Revision.Revision).First())
-            .Where(r => r.Revision.Action != RevisionAction.Deleted).ToList();
+        var latestPrices = prices
+            .Where(price => price.Revision.Status == RevisionStatus.Active)
+            .Where(price => price.Revision.Action != RevisionAction.Deleted);
 
         return new ManagerResponse(product, latestPrices);
     }

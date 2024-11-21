@@ -105,7 +105,8 @@ public class ProductMappingProfileTests
         // Arrange
         var productPriceEntity = new ProductPriceEntity
         {
-            Value = 10.0f,
+            Units = 10,
+            Nanos = 0,
             CurrencyKey = Guid.NewGuid(),
             ProductKey = Guid.NewGuid()
         };
@@ -124,7 +125,8 @@ public class ProductMappingProfileTests
         var result = _mapper.Map<ProductPriceResponse>(lifeCycleResult);
 
         // Assert
-        Assert.Equal(productPriceEntity.Value, result.Price.Value);
+        Assert.Equal(productPriceEntity.Units, result.Price.Units);
+        Assert.Equal(productPriceEntity.Nanos, result.Price.Nanos);
         Assert.Equal(productPriceEntity.CurrencyKey.ToString(), result.Price.CurrencyKey);
         Assert.Equal(revision.Key.ToString(), result.Revision.Key);
         Assert.Equal(Timestamp.FromDateTime(revision.CreatedAt), result.Revision.CreatedAt);
@@ -136,7 +138,8 @@ public class ProductMappingProfileTests
         // Arrange
         var productPriceEntity = new ProductPriceEntity
         {
-            Value = 10.0f,
+            Units = 10,
+            Nanos = 0,
             CurrencyKey = Guid.NewGuid(),
             ProductKey = Guid.NewGuid()
         };
@@ -145,7 +148,8 @@ public class ProductMappingProfileTests
         var result = _mapper.Map<ProductPrice>(productPriceEntity);
 
         // Assert
-        Assert.Equal(productPriceEntity.Value, result.Value);
+        Assert.Equal(productPriceEntity.Units, result.Units);
+        Assert.Equal(productPriceEntity.Nanos, result.Nanos);
         Assert.Equal(productPriceEntity.CurrencyKey.ToString(), result.CurrencyKey);
     }
 
@@ -239,7 +243,8 @@ public class ProductMappingProfileTests
         // Arrange
         var productPriceEntity = new ProductPriceEntity
         {
-            Value = 10.0f,
+            Units = 10,
+            Nanos = 0,
             CurrencyKey = Guid.NewGuid(),
             ProductKey = Guid.NewGuid()
         };
@@ -258,7 +263,8 @@ public class ProductMappingProfileTests
         var result = _mapper.Map<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>(lifeCycleResult);
 
         // Assert
-        Assert.Equal(productPriceEntity.Value, result.Entity.Value);
+        Assert.Equal(productPriceEntity.Units, result.Entity.Units);
+        Assert.Equal(productPriceEntity.Nanos, result.Entity.Nanos);
         Assert.Equal(productPriceEntity.CurrencyKey, result.Entity.CurrencyKey);
         Assert.Equal(productPriceEntity.ProductKey, result.Entity.ProductKey);
         Assert.Equal(revision.Key, result.Revision.Key);

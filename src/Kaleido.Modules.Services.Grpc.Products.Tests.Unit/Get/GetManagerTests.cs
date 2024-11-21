@@ -45,7 +45,8 @@ public class GetManagerTests
             {
                 Entity = new ProductPriceEntity
                 {
-                    Value = 10.0f,
+                    Units = 10,
+                    Nanos = 0,
                     CurrencyKey = Guid.NewGuid(),
                     ProductKey = _testProductKey
                 },

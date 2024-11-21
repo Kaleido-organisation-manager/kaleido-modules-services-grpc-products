@@ -31,8 +31,8 @@ public class GetRevisionIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -48,7 +48,7 @@ public class GetRevisionIntegrationTests
                 CategoryKey = categoryResponse.Key,
                 Prices =
                 {
-                    new ProductPrice { Value = 29.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                    new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
                 }
             }
         };
@@ -67,8 +67,10 @@ public class GetRevisionIntegrationTests
         Assert.NotNull(response);
         Assert.Equal("Updated Product", response.Product.Name);
         Assert.Equal("Updated Description", response.Product.Description);
-        Assert.Single(response.Product.Prices);
-        Assert.Equal(29.99f, response.Product.Prices[0].Price.Value);
+        Assert.Single(response.Product.Prices.Where(x => x.Revision.Action != "Deleted"));
+        Assert.Equal(2, response.Product.Prices.Where(x => x.Revision.Action == "Deleted").Count());
+        Assert.Equal(29, response.Product.Prices.Where(x => x.Revision.Action != "Deleted").First().Price.Units);
+        Assert.Equal(99, response.Product.Prices.Where(x => x.Revision.Action != "Deleted").First().Price.Nanos);
     }
 
     [Fact]
@@ -116,7 +118,7 @@ public class GetRevisionIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var createdProduct = await _fixture.Client.CreateProductAsync(product);
@@ -144,7 +146,7 @@ public class GetRevisionIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var createdProduct = await _fixture.Client.CreateProductAsync(product);
@@ -176,8 +178,8 @@ public class GetRevisionIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -196,7 +198,7 @@ public class GetRevisionIntegrationTests
                 CategoryKey = categoryResponse.Key,
                 Prices =
                 {
-                    new ProductPrice { Value = 29.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                    new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
                 }
             }
         };
@@ -214,7 +216,7 @@ public class GetRevisionIntegrationTests
         // Assert
         Assert.NotNull(response);
         Assert.Equal(2, response.Product.Prices.Count);
-        Assert.Contains(response.Product.Prices, p => p.Price.Value == 9.99f);
-        Assert.Contains(response.Product.Prices, p => p.Price.Value == 19.99f);
+        Assert.Contains(response.Product.Prices, p => p.Price.Units == 9 && p.Price.Nanos == 99);
+        Assert.Contains(response.Product.Prices, p => p.Price.Units == 19 && p.Price.Nanos == 99);
     }
 }

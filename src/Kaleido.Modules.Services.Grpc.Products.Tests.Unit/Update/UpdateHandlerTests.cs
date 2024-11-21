@@ -47,7 +47,8 @@ public class UpdateHandlerTests
                 {
                     new ProductPrice
                     {
-                        Value = 29.99f,
+                        Units = 29,
+                        Nanos = 99,
                         CurrencyKey = currencyKey.ToString()
                     }
                 }
@@ -77,7 +78,8 @@ public class UpdateHandlerTests
 
         var priceEntity = new ProductPriceEntity
         {
-            Value = 29.99f,
+            Units = 29,
+            Nanos = 99,
             CurrencyKey = currencyKey,
             ProductKey = productKey
         };
@@ -110,7 +112,8 @@ public class UpdateHandlerTests
                     {
                         Price = new ProductPrice
                         {
-                            Value = priceEntity.Value,
+                            Units = priceEntity.Units,
+                            Nanos = priceEntity.Nanos,
                             CurrencyKey = currencyKey.ToString()
                         }
                     }
@@ -166,7 +169,8 @@ public class UpdateHandlerTests
         Assert.Equal(_testResponse.Product.Description, result.Product.Description);
         Assert.Equal(_testResponse.Product.CategoryKey, result.Product.CategoryKey);
         Assert.Single(result.Product.Prices);
-        Assert.Equal(_testResponse.Product.Prices[0].Price.Value, result.Product.Prices[0].Price.Value);
+        Assert.Equal(_testResponse.Product.Prices[0].Price.Units, result.Product.Prices[0].Price.Units);
+        Assert.Equal(_testResponse.Product.Prices[0].Price.Nanos, result.Product.Prices[0].Price.Nanos);
 
         _mocker.GetMock<IUpdateManager>()
             .Verify(x => x.UpdateAsync(

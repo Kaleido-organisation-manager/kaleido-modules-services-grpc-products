@@ -34,12 +34,14 @@ public class CreateManagerTests
         {
             new ProductPrice
             {
-                Value = 10.0f,
+                Units = 10,
+                Nanos = 0,
                 CurrencyKey = Guid.NewGuid().ToString()
             },
             new ProductPrice
             {
-                Value = 15.0f,
+                Units = 15,
+                Nanos = 0,
                 CurrencyKey = Guid.NewGuid().ToString()
             }
         };

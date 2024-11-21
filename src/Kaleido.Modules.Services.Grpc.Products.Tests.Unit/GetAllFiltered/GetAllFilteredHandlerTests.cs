@@ -2,6 +2,7 @@ using AutoMapper;
 using FluentValidation;
 using Grpc.Core;
 using Kaleido.Common.Services.Grpc.Models;
+using Kaleido.Grpc.Categories;
 using Kaleido.Grpc.Products;
 using Kaleido.Modules.Services.Grpc.Products.Common.Mappers;
 using Kaleido.Modules.Services.Grpc.Products.Common.Models;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Moq.AutoMock;
+using static Kaleido.Grpc.Categories.GrpcCategories;
 
 namespace Kaleido.Modules.Services.Grpc.Products.Tests.Unit.GetAllFiltered;
 
@@ -55,7 +57,8 @@ public class GetAllFilteredHandlerTests
 
         var priceEntity = new ProductPriceEntity
         {
-            Value = 9.99f,
+            Units = 9,
+            Nanos = 99,
             CurrencyKey = Guid.NewGuid(),
             ProductKey = productRevision.Key
         };
@@ -94,7 +97,8 @@ public class GetAllFilteredHandlerTests
                             {
                                 Price = new ProductPrice
                                 {
-                                    Value = priceEntity.Value,
+                                    Units = priceEntity.Units,
+                                    Nanos = priceEntity.Nanos,
                                     CurrencyKey = priceEntity.CurrencyKey.ToString()
                                 }
                             }
@@ -118,7 +122,21 @@ public class GetAllFilteredHandlerTests
             .ReturnsAsync(_testManagerResponses);
 
         _mocker.Use(new MapperConfiguration(cfg => cfg.AddProfile<ProductMappingProfile>()).CreateMapper());
-        _mocker.Use(new KeyValidator());
+
+        var keyValidator = new KeyValidator();
+        var nameValidator = new NameValidator();
+        var currencyKeyValidator = new CurrencyKeyValidator(keyValidator);
+        var productPriceValidator = new ProductPriceValidator(currencyKeyValidator);
+
+        // Mock only the external dependency (categories client)
+        var categoriesClientMock = new Mock<GrpcCategoriesClient>();
+        // // Setup happy path for category validation
+        categoriesClientMock.Setup(c => c.GetCategoryAsync(It.IsAny<CategoryRequest>(), It.IsAny<Metadata>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Returns(new AsyncUnaryCall<CategoryResponse>(Task.FromResult(new CategoryResponse()), Task.FromResult(new Metadata()), null!, null!, null!));
+
+        var categoryKeyValidator = new CategoryKeyValidator(keyValidator, categoriesClientMock.Object, NullLogger<CategoryKeyValidator>.Instance);
+
+        _mocker.Use(categoryKeyValidator);
         _mocker.Use(new NameValidator());
         _mocker.Use(NullLogger<GetAllFilteredHandler>.Instance);
 
@@ -138,7 +156,8 @@ public class GetAllFilteredHandlerTests
         Assert.Equal(_testResponse.Products[0].Product.Description, result.Products[0].Product.Description);
         Assert.Equal(_testResponse.Products[0].Product.CategoryKey, result.Products[0].Product.CategoryKey);
         Assert.Single(result.Products[0].Product.Prices);
-        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Value, result.Products[0].Product.Prices[0].Price.Value);
+        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Units, result.Products[0].Product.Prices[0].Price.Units);
+        Assert.Equal(_testResponse.Products[0].Product.Prices[0].Price.Nanos, result.Products[0].Product.Prices[0].Price.Nanos);
 
         _mocker.GetMock<IGetAllFilteredManager>()
             .Verify(x => x.GetAllFilteredAsync(

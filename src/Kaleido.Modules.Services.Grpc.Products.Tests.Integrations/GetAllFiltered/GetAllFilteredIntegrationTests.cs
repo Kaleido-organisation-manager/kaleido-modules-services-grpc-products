@@ -29,21 +29,21 @@ public class GetAllFilteredIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse1.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Test Another",
             CategoryKey = categoryResponse1.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product3 = new Product
         {
             Name = "Test Product Different Category",
             CategoryKey = categoryResponse2.Key,
-            Prices = { new ProductPrice { Value = 29.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 29, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.CreateProductAsync(product1);
@@ -77,14 +77,14 @@ public class GetAllFilteredIntegrationTests
         {
             Name = "Special Product",
             CategoryKey = categoryResponse1.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Special Item",
             CategoryKey = categoryResponse2.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.CreateProductAsync(product1);
@@ -112,14 +112,14 @@ public class GetAllFilteredIntegrationTests
         {
             Name = "First Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Second Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.CreateProductAsync(product1);
@@ -146,14 +146,14 @@ public class GetAllFilteredIntegrationTests
         {
             Name = "First Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Second Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.CreateProductAsync(product1);
@@ -178,7 +178,7 @@ public class GetAllFilteredIntegrationTests
         {
             Name = "Test Product",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         await _fixture.Client.CreateProductAsync(product);
@@ -187,8 +187,12 @@ public class GetAllFilteredIntegrationTests
         var response = await _fixture.Client.GetAllProductsFilteredAsync(
             new ProductFilterRequest { Name = "test" });
 
+        var getAllResponse = await _fixture.Client.GetAllProductsAsync(new Kaleido.Grpc.Products.EmptyRequest());
+
         // Assert
+        Assert.Single(getAllResponse.Products);
         Assert.NotNull(response);
+        Assert.True(response.Products.All(p => p.Revision.Action != "Deleted"));
         Assert.Single(response.Products);
         Assert.Contains(response.Products, p => p.Product.Name == "Test Product");
     }
@@ -204,14 +208,14 @@ public class GetAllFilteredIntegrationTests
         {
             Name = "Test Product One",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var product2 = new Product
         {
             Name = "Test Product Two",
             CategoryKey = categoryResponse.Key,
-            Prices = { new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() } }
+            Prices = { new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() } }
         };
 
         var createResponse1 = await _fixture.Client.CreateProductAsync(product1);
@@ -245,8 +249,8 @@ public class GetAllFilteredIntegrationTests
             CategoryKey = categoryResponse.Key,
             Prices =
             {
-                new ProductPrice { Value = 9.99f, CurrencyKey = Guid.NewGuid().ToString() },
-                new ProductPrice { Value = 19.99f, CurrencyKey = Guid.NewGuid().ToString() }
+                new ProductPrice { Units = 9, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() },
+                new ProductPrice { Units = 19, Nanos = 99, CurrencyKey = Guid.NewGuid().ToString() }
             }
         };
 
@@ -261,8 +265,8 @@ public class GetAllFilteredIntegrationTests
         Assert.Single(response.Products);
         var returnedProduct = response.Products[0];
         Assert.Equal(2, returnedProduct.Product.Prices.Count);
-        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Value == 9.99f);
-        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Value == 19.99f);
+        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Units == 9 && p.Price.Nanos == 99);
+        Assert.Contains(returnedProduct.Product.Prices, p => p.Price.Units == 19 && p.Price.Nanos == 99);
     }
 
     [Theory]
