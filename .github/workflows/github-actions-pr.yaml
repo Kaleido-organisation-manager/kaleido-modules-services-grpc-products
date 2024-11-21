@@ -20,6 +20,7 @@ jobs:
   build-products-service:
     name: Build Products Service
     needs: gitversion
+    if: success()
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -38,6 +39,7 @@ jobs:
   build-products-service-migrations:
     name: Build Products Service Migrations
     needs: gitversion
+    if: success()
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -56,6 +58,7 @@ jobs:
   build-products-service-client:
     name: Build Products Service Client
     needs: gitversion
+    if: success()
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -74,6 +77,7 @@ jobs:
   unit-tests:
     name: Run Unit Tests
     needs: [build-products-service, build-products-service-migrations, build-products-service-client]
+    if: success()
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -91,8 +95,9 @@ jobs:
 
   create-service-release:
     name: Create Dotnet Release for service
-    runs-on: ubuntu-latest
     needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
+    if: success()
+    runs-on: ubuntu-latest
     permissions:
       packages: read
     steps:
@@ -114,8 +119,9 @@ jobs:
 
   create-migrations-release:
     name: Create Dotnet Release for migrations
-    runs-on: ubuntu-latest
     needs: [build-products-service, build-products-service-migrations, build-products-service-client, gitversion]
+    if: success()
+    runs-on: ubuntu-latest
     permissions:
       packages: read
     steps:
@@ -138,6 +144,7 @@ jobs:
   integration-tests:
     name: Run Integration Tests
     needs: [create-service-release, create-migrations-release, gitversion]
+    if: success()
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -159,10 +166,16 @@ jobs:
         with:
           name: products-service-migrations
           path: migrations/out
-      - name: Build Product Service Docker Image
+      - name: Build Products Service Docker Image
         run: docker build . -f dockerfiles/Grpc.Products/Dockerfile.cicd -t kaleido-modules-services-grpc-products:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=service/out
-      - name: Build Migrations Docker Image
+      - name: Build Products Migrations Docker Image
         run: docker build . -f dockerfiles/Grpc.Products.Migrations/Dockerfile.cicd -t kaleido-modules-services-grpc-products-migrations:${{ needs.gitversion.outputs.version }} --build-arg RELEASE_DIR=migrations/out
+      - name: login to ghcr
+        run: echo ${{ secrets.NUGET_GITHUB_TOKEN }} | docker login ghcr.io/kaleido-organisation-manager -u ${{ github.actor }} --password-stdin
+      - name: Pull Categories Service Image
+        run: docker pull ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-categories:latest
+      - name: Pull Categories Migrations Image
+        run: docker pull ghcr.io/kaleido-organisation-manager/kaleido-modules-services-grpc-categories-migrations:latest
       - name: Run integration tests
         run: dotnet test
         working-directory: src/Kaleido.Modules.Services.Grpc.Products.Tests.Integrations
