@@ -53,27 +53,26 @@ public class UpdateManager : IUpdateManager
             return new ManagerResponse(ManagerResponseState.NotFound);
         }
 
-        var productPrices = await _priceLifecycleHandler.FindAllAsync(price => price.ProductKey == key, cancellationToken: cancellationToken);
-
-        // Get latest revision of product prices
-        var activeProductPrices = productPrices
-            .Where(productPrice => productPrice.Revision.Status == RevisionStatus.Active);
+        var productPrices = await _priceLifecycleHandler.FindAllAsync(
+            price => price.ProductKey == key,
+            revision => revision.Status == RevisionStatus.Active && revision.Action != RevisionAction.Deleted,
+            cancellationToken: cancellationToken);
 
         // Get Prices to delete
-        var pricesToDelete = activeProductPrices
+        var pricesToDelete = productPrices
             .Where(x => !prices.Any(y => y.CurrencyKey == x.Entity.CurrencyKey) &&
                         x.Revision.Action != RevisionAction.Deleted)
             .ToList();
 
         // Get Prices to create
         var pricesToCreate = prices
-            .Where(x => !activeProductPrices
+            .Where(x => !productPrices
                 .Any(y => y.Entity.CurrencyKey == x.CurrencyKey))
-            .Where(x => activeProductPrices.FirstOrDefault(y => y.Entity.CurrencyKey == x.CurrencyKey)?.Revision.Action != RevisionAction.Deleted)
+            .Where(x => productPrices.FirstOrDefault(y => y.Entity.CurrencyKey == x.CurrencyKey)?.Revision.Action != RevisionAction.Deleted)
             .ToList();
 
         // Get Prices to restore
-        var pricesToRestore = activeProductPrices
+        var pricesToRestore = productPrices
             .Where(x => prices
                 .Any(y =>
                     y.CurrencyKey == x.Entity.CurrencyKey &&
@@ -82,13 +81,13 @@ public class UpdateManager : IUpdateManager
 
         // Get Prices to update
         var pricesToUpdate = prices.Where(x =>
-            activeProductPrices.Any(y =>
+            productPrices.Any(y =>
                 y.Entity.CurrencyKey == x.CurrencyKey &&
                 (y.Entity.Units != x.Units || y.Entity.Nanos != x.Nanos) &&
                 y.Revision.Action != RevisionAction.Deleted))
             .Select(x =>
             {
-                var matchedActivePrice = activeProductPrices.First(y => y.Entity.CurrencyKey == x.CurrencyKey);
+                var matchedActivePrice = productPrices.First(y => y.Entity.CurrencyKey == x.CurrencyKey);
                 var copyOfMatched = _mapper.Map<EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>>(matchedActivePrice);
                 x.ProductKey = key;
                 copyOfMatched.Entity = x;
@@ -97,7 +96,7 @@ public class UpdateManager : IUpdateManager
             .ToList();
 
         // Get the unchanged prices
-        var unchangedPrices = activeProductPrices
+        var unchangedPrices = productPrices
             .Where(x => !pricesToDelete.Any(y => y.Key == x.Key) &&
                         !pricesToCreate.Any(y => y.CurrencyKey == x.Entity.CurrencyKey) &&
                         !pricesToRestore.Any(y => y.Key == x.Key) &&

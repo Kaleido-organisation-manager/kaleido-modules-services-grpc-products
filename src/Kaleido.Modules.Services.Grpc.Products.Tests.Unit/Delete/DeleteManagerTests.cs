@@ -84,7 +84,11 @@ public class DeleteManagerTests
             });
 
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
-            .Setup(x => x.FindAllAsync(It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.FindAllAsync(
+                It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(_testProductPrices);
 
         _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
@@ -186,40 +190,5 @@ public class DeleteManagerTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() => _sut.DeleteAsync(_testProductKey));
         Assert.Equal(expectedException.Message, exception.Message);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ShouldFilterOutDeletedPrices()
-    {
-        // Arrange
-        var deletedPrice = new EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>
-        {
-            Entity = new ProductPriceEntity
-            {
-                Units = 20,
-                Nanos = 0,
-                CurrencyKey = Guid.NewGuid(),
-                ProductKey = _testProductKey
-            },
-            Revision = new ProductPriceRevisionEntity
-            {
-                Key = Guid.NewGuid(),
-                CreatedAt = _testTimestamp,
-                Action = RevisionAction.Deleted
-            }
-        };
-
-        var allPrices = _testProductPrices.Concat(new[] { deletedPrice });
-
-        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
-            .Setup(x => x.FindAllAsync(It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(allPrices);
-
-        // Act
-        var result = await _sut.DeleteAsync(_testProductKey);
-
-        // Assert
-        Assert.Equal(_testProductPrices.Count, result.ProductPrices?.Count() ?? 0);
-        Assert.DoesNotContain(result.ProductPrices ?? [], p => p.Revision.Key == deletedPrice.Revision.Key);
     }
 }

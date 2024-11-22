@@ -73,6 +73,7 @@ public class GetAllFilteredManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(_testProducts);
@@ -80,6 +81,7 @@ public class GetAllFilteredManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(_testPrices);
@@ -155,70 +157,13 @@ public class GetAllFilteredManagerTests
     }
 
     [Fact]
-    public async Task GetAllFilteredAsync_WithDeletedProducts_ShouldFilterOutDeletedProducts()
-    {
-        // Arrange
-        var deletedProduct = new EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>
-        {
-            Entity = new ProductEntity { Name = "Deleted Product" },
-            Revision = new ProductRevisionEntity { Action = RevisionAction.Deleted }
-        };
-        var products = _testProducts.Concat(new[] { deletedProduct });
-
-        _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
-            .Setup(x => x.FindAllAsync(
-                It.IsAny<Expression<Func<ProductEntity, bool>>>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(products);
-
-        // Act
-        var result = await _sut.GetAllFilteredAsync(
-            "Test",
-            _testCategoryKey.ToString(),
-            CancellationToken.None);
-
-        // Assert
-        Assert.Single(result);
-        Assert.Equal(_testProductName, result.First().Product!.Entity.Name);
-    }
-
-    [Fact]
-    public async Task GetAllFilteredAsync_WithDeletedPrices_ShouldFilterOutDeletedPrices()
-    {
-        // Arrange
-        var deletedPrice = new EntityLifeCycleResult<ProductPriceEntity, ProductPriceRevisionEntity>
-        {
-            Entity = new ProductPriceEntity { ProductKey = _testProductKey },
-            Revision = new ProductPriceRevisionEntity { Action = RevisionAction.Deleted }
-        };
-        var prices = _testPrices.Concat(new[] { deletedPrice });
-
-        _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
-            .Setup(x => x.FindAllAsync(
-                It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(prices);
-
-        // Act
-        var result = await _sut.GetAllFilteredAsync(
-            "Test",
-            _testCategoryKey.ToString(),
-            CancellationToken.None);
-
-        // Assert
-        Assert.Single(result);
-        Assert.Single(result.First().ProductPrices!);
-    }
-
-    [Fact]
     public async Task GetAllFilteredAsync_WithNoMatches_ShouldReturnEmptyList()
     {
         // Arrange
         _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>>());
@@ -241,6 +186,7 @@ public class GetAllFilteredManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductEntity, ProductRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);

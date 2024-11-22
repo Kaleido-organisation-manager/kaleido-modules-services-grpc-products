@@ -191,6 +191,7 @@ public class UpdateManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPrices);
@@ -240,6 +241,7 @@ public class UpdateManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPrices);
@@ -285,6 +287,7 @@ public class UpdateManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPrices);
@@ -333,6 +336,7 @@ public class UpdateManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPrices);
@@ -378,6 +382,7 @@ public class UpdateManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPrices);
@@ -434,6 +439,7 @@ public class UpdateManagerTests
         _mocker.GetMock<IEntityLifecycleHandler<ProductPriceEntity, ProductPriceRevisionEntity>>()
             .Setup(x => x.FindAllAsync(
                 It.IsAny<Expression<Func<ProductPriceEntity, bool>>>(),
+                It.IsAny<Expression<Func<ProductPriceRevisionEntity, bool>>>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPrices);

@@ -31,11 +31,8 @@ public class DeleteManager : IDeleteManager
 
         var productPrices = await _productPriceLifecycleHandler.FindAllAsync(
             price => price.ProductKey == key,
+            revision => revision.Status == RevisionStatus.Active && revision.Action != RevisionAction.Deleted,
             cancellationToken: cancellationToken);
-
-        productPrices = productPrices
-            .Where(price => price.Revision.Status == RevisionStatus.Active)
-            .Where(price => price.Revision.Action != RevisionAction.Deleted);
 
         var timestamp = DateTime.UtcNow;
 

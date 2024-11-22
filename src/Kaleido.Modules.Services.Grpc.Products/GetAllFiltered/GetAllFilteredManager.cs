@@ -27,25 +27,21 @@ public class GetAllFilteredManager : IGetAllFilteredManager
             product =>
                 (string.IsNullOrEmpty(name) || product.Name.ToLower().Contains(name.ToLower())) &&
                 (string.IsNullOrEmpty(categoryKey) || product.CategoryKey == Guid.Parse(categoryKey)),
+            revision => revision.Status == RevisionStatus.Active && revision.Action != RevisionAction.Deleted,
             cancellationToken: cancellationToken
         );
 
-        var nonDeletedProducts = products
-            .Where(product => product.Revision.Status == RevisionStatus.Active)
-            .Where(product => product.Revision.Action != RevisionAction.Deleted);
 
         var result = new List<ManagerResponse>();
 
-        foreach (var product in nonDeletedProducts)
+        foreach (var product in products)
         {
             var prices = await _priceLifecycleHandler.FindAllAsync(
                 price => price.ProductKey == product.Key,
+                revision => revision.Status == RevisionStatus.Active && revision.Action != RevisionAction.Deleted,
                 cancellationToken: cancellationToken
             );
-            var latestPrices = prices
-                .Where(price => price.Revision.Status == RevisionStatus.Active)
-                .Where(price => price.Revision.Action != RevisionAction.Deleted);
-            result.Add(new ManagerResponse(product, latestPrices));
+            result.Add(new ManagerResponse(product, prices));
         }
 
         return result;
