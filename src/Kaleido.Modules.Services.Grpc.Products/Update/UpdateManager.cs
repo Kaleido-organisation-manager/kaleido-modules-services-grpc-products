@@ -55,7 +55,7 @@ public class UpdateManager : IUpdateManager
 
         var productPrices = await _priceLifecycleHandler.FindAllAsync(
             price => price.ProductKey == key,
-            revision => revision.Status == RevisionStatus.Active && revision.Action != RevisionAction.Deleted,
+            revision => revision.Status == RevisionStatus.Active,
             cancellationToken: cancellationToken);
 
         // Get Prices to delete
