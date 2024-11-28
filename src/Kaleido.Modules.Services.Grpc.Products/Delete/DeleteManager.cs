@@ -1,4 +1,5 @@
 using Kaleido.Common.Services.Grpc.Constants;
+using Kaleido.Common.Services.Grpc.Exceptions;
 using Kaleido.Common.Services.Grpc.Handlers.Interfaces;
 using Kaleido.Common.Services.Grpc.Models;
 using Kaleido.Modules.Services.Grpc.Products.Common.Constants;
@@ -22,20 +23,25 @@ public class DeleteManager : IDeleteManager
 
     public async Task<ManagerResponse> DeleteAsync(Guid key, CancellationToken cancellationToken = default)
     {
-        var requestedProduct = await _productLifecycleHandler.GetAsync(key, cancellationToken: cancellationToken);
+        EntityLifeCycleResult<ProductEntity, ProductRevisionEntity>? requestedProduct;
+        try
+        {
+            requestedProduct = await _productLifecycleHandler.GetAsync(key, cancellationToken: cancellationToken);
+        }
+        catch (Exception ex) when (ex is EntityNotFoundException or RevisionNotFoundException)
+        {
+            return new ManagerResponse(ManagerResponseState.NotFound);
+        }
 
-        if (requestedProduct == null)
+        if (requestedProduct == null || requestedProduct.Revision.Action == RevisionAction.Deleted)
         {
             return new ManagerResponse(ManagerResponseState.NotFound);
         }
 
         var productPrices = await _productPriceLifecycleHandler.FindAllAsync(
             price => price.ProductKey == key,
+            revision => revision.Status == RevisionStatus.Active && revision.Action != RevisionAction.Deleted,
             cancellationToken: cancellationToken);
-
-        productPrices = productPrices
-            .Where(price => price.Revision.Status == RevisionStatus.Active)
-            .Where(price => price.Revision.Action != RevisionAction.Deleted);
 
         var timestamp = DateTime.UtcNow;
 

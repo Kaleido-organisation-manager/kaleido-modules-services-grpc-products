@@ -50,7 +50,7 @@ public class DeleteHandler : IDeleteHandler
             throw new RpcException(new Status(StatusCode.Internal, e.Message, e));
         }
 
-        if (managerResult == null || managerResult.Value.State != ManagerResponseState.Success)
+        if (managerResult == null || managerResult.Value.State == ManagerResponseState.NotFound)
         {
             throw new RpcException(new Status(StatusCode.NotFound, $"Product with key {request.Key} not found"));
         }

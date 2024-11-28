@@ -130,6 +130,6 @@ public class DeleteIntegrationTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<RpcException>(
             async () => await _fixture.Client.DeleteProductAsync(new ProductRequest { Key = createResponse.Key }));
-        Assert.Equal(StatusCode.Internal, exception.Status.StatusCode);
+        Assert.Equal(StatusCode.NotFound, exception.Status.StatusCode);
     }
 }

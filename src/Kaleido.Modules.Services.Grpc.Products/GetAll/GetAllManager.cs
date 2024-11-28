@@ -29,12 +29,10 @@ public class GetAllManager : IGetAllManager
         {
             var prices = await _priceLifecycleHandler.FindAllAsync(
                 price => price.ProductKey == product.Key,
+                revision => revision.Status == RevisionStatus.Active && revision.Action != RevisionAction.Deleted,
                 cancellationToken: cancellationToken
             );
-            var latestPrices = prices
-                .Where(price => price.Revision.Status == RevisionStatus.Active)
-                .Where(price => price.Revision.Action != RevisionAction.Deleted);
-            result.Add(new ManagerResponse(product, latestPrices));
+            result.Add(new ManagerResponse(product, prices));
         }
 
         return result;
