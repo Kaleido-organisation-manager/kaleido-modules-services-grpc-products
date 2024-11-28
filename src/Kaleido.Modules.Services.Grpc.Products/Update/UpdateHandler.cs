@@ -44,6 +44,11 @@ public class UpdateHandler : IUpdateHandler
             var productEntity = _mapper.Map<ProductEntity>(request.Product);
             var priceEntities = request.Product.Prices
                 .Select(p => _mapper.Map<ProductPriceEntity>(p))
+                .Select(p =>
+                {
+                    p.ProductKey = key;
+                    return p;
+                })
                 .ToList();
 
             result = await _manager.UpdateAsync(key, productEntity, priceEntities, cancellationToken);
